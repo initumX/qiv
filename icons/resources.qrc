@@ -1,0 +1,28 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/icons">
+        <file>arrow-left.svg</file>
+        <file>arrow-right.svg</file>
+        <file>ccw.svg</file>
+        <file>copy.svg</file>
+        <file>crop.svg</file>
+        <file>cw.svg</file>
+        <file>flip-h.svg</file>
+        <file>flip-v.svg</file>
+        <file>folder-open.svg</file>
+        <file>help.svg</file>
+        <file>info.svg</file>
+        <file>minus.svg</file>
+        <file>new-file.svg</file>
+        <file>paste.svg</file>
+        <file>plus.svg</file>
+        <file>reload.svg</file>
+        <file>resize.svg</file>
+        <file>save.svg</file>
+        <file>trash.svg</file>
+        <file>zoom-fit.svg</file>
+        <file>zoom-in.svg</file>
+        <file>zoom-original.svg</file>
+        <file>zoom-out.svg</file>
+    </qresource>
+</RCC>
