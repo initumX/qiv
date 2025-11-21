@@ -231,18 +231,16 @@ class MainWindow(QMainWindow):
 
     def open_image(self):
         home_dir = os.path.expanduser("~")
-        path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Open Image",
-            home_dir,
-            "Images (*.png *.xpm *.jpg *.jpeg *.bmp)"
-        )
-        if path and self.image_model.load_from_path(path):
-            self.navigator_model.set_current_path(path)
-            self.display_image()
-            self._update_status_info()
-            formatted_path = self.navigator_model.format_path_for_display(path)
-            self.status_bar.showMessage(f"Opened: {formatted_path}")
+        dialog = QFileDialog(self, "Open Image", home_dir, "Images (*.png *.xpm *.jpg *.jpeg *.bmp)")
+        dialog.setOption(QFileDialog.DontUseNativeDialog, True)  # Добавлено
+        if dialog.exec() == QFileDialog.Accepted:
+            path = dialog.selectedFiles()[0]
+            if path and self.image_model.load_from_path(path):
+                self.navigator_model.set_current_path(path)
+                self.display_image()
+                self._update_status_info()
+                formatted_path = self.navigator_model.format_path_for_display(path)
+                self.status_bar.showMessage(f"Opened: {formatted_path}")
 
     def reload_image(self):
         """Reload current image from file."""
@@ -400,48 +398,48 @@ class MainWindow(QMainWindow):
         if not self.image_model.current_pixmap:
             return
 
-
         initial_path = self.image_model.path if self.image_model.path else ""
-
-        path, selected_filter = QFileDialog.getSaveFileName(
-            self,
-            "Save Image",
-            initial_path,
-            "JPEG (*.jpg *.jpeg);;PNG (*.png);;WEBP (*.webp);;BMP (*.bmp)"
-        )
-        if not path:
-            return
-
-        # Add extension if not provided
-        path = SaveHelper.ensure_extension(path, selected_filter)
-
-        # Determine format from extension and handle quality
-        if path.lower().endswith((".jpg", ".jpeg")):
-            quality = SaveHelper.get_quality_for_format(self, "JPEG")
-            if quality is None:  # User cancelled
+        dialog = QFileDialog(self, "Save Image", initial_path,
+                             "JPEG (*.jpg *.jpeg);;PNG (*.png);;WEBP (*.webp);;BMP (*.bmp)")
+        dialog.setOption(QFileDialog.DontUseNativeDialog, True)  # Use Qt's dialog for consistency
+        dialog.setAcceptMode(QFileDialog.AcceptSave)  # Ensure it's a save dialog
+        if dialog.exec() == QFileDialog.Accepted:
+            selected_files = dialog.selectedFiles()
+            if not selected_files:
                 return
-            success = self.image_model.save(path, "JPEG", quality)
-        elif path.lower().endswith(".webp"):
-            quality = SaveHelper.get_quality_for_format(self, "WEBP")
-            if quality is None:  # User cancelled
-                return
-            success = self.image_model.save(path, "WEBP", quality)
-        elif path.lower().endswith(".png"):
-            success = self.image_model.save(path, "PNG")
-        elif path.lower().endswith(".bmp"):
-            success = self.image_model.save(path, "BMP")
-        else:
-            # Default to PNG if extension not recognized
-            if not any(path.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.webp', '.bmp']):
-                path += '.png'
-            success = self.image_model.save(path, "PNG")
+            path = selected_files[0]
+            selected_filter = dialog.selectedNameFilter()
 
-        if success:
-            if path == self.image_model.path:
-                self.image_model.path = path
-            self.status_bar.showMessage(f"Saved: {path}")
-        else:
-            self.status_bar.showMessage(f"Failed to save: {path}")
+            # Add extension if not provided
+            path = SaveHelper.ensure_extension(path, selected_filter)
+
+            # Determine format from extension and handle quality
+            if path.lower().endswith((".jpg", ".jpeg")):
+                quality = SaveHelper.get_quality_for_format(self, "JPEG")
+                if quality is None:  # User cancelled
+                    return
+                success = self.image_model.save(path, "JPEG", quality)
+            elif path.lower().endswith(".webp"):
+                quality = SaveHelper.get_quality_for_format(self, "WEBP")
+                if quality is None:  # User cancelled
+                    return
+                success = self.image_model.save(path, "WEBP", quality)
+            elif path.lower().endswith(".png"):
+                success = self.image_model.save(path, "PNG")
+            elif path.lower().endswith(".bmp"):
+                success = self.image_model.save(path, "BMP")
+            else:
+                # Default to PNG if extension not recognized
+                if not any(path.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.webp', '.bmp']):
+                    path += '.png'
+                success = self.image_model.save(path, "PNG")
+
+            if success:
+                if path == self.image_model.path:
+                    self.image_model.path = path
+                self.status_bar.showMessage(f"Saved: {path}")
+            else:
+                self.status_bar.showMessage(f"Failed to save: {path}")
 
     def resize_image(self):
         """Resize image with aspect ratio preservation."""
