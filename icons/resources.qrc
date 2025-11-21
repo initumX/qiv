@@ -1,6 +1,7 @@
 <!DOCTYPE RCC>
 <RCC version="1.0">
     <qresource prefix="/icons">
+        <file>qiv.svg</file>
         <file>arrow-left.svg</file>
         <file>arrow-right.svg</file>
         <file>ccw.svg</file>
