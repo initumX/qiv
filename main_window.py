@@ -17,6 +17,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Qt Image Viewer")
         self.setGeometry(100, 100, 1024, 768)
+        app_icon = QIcon(":/icons/qiv.svg")
+        self.setWindowIcon(app_icon)
 
         # Models
         self.image_model = ImageModel()
