@@ -44,7 +44,7 @@ def main():
             "--noconfirm",
             "--clean",
             "--noconsole",
-            "--onefile",
+            #"--onefile",
             "--exclude-module=PySide6.QtNetwork",
             "main.py"
         ],
