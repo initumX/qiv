@@ -231,8 +231,8 @@ class MainWindow(QMainWindow):
 
     def open_image(self):
         home_dir = os.path.expanduser("~")
-        dialog = QFileDialog(self, "Open Image", home_dir, "Images (*.png *.xpm *.jpg *.jpeg *.bmp)")
-        dialog.setOption(QFileDialog.DontUseNativeDialog, True)  # Добавлено
+        dialog = QFileDialog(self, "Open Image", home_dir, "Images (*.jpg *.jpeg *.png *.webp *.heic *.heif *.gif)")
+        dialog.setOption(QFileDialog.DontUseNativeDialog, True)
         if dialog.exec() == QFileDialog.Accepted:
             path = dialog.selectedFiles()[0]
             if path and self.image_model.load_from_path(path):
@@ -399,10 +399,18 @@ class MainWindow(QMainWindow):
             return
 
         initial_path = self.image_model.path if self.image_model.path else ""
+
+        # Remove extension if source format is NOT one we can save to
+        if initial_path:
+            name, ext = os.path.splitext(initial_path)
+            # If original format is NOT in our saveable formats → strip extension
+            if ext.lower() not in ('.jpg', '.jpeg', '.png', '.webp'):
+                initial_path = name
+
         dialog = QFileDialog(self, "Save Image", initial_path,
-                             "JPEG (*.jpg *.jpeg);;PNG (*.png);;WEBP (*.webp);;BMP (*.bmp)")
-        dialog.setOption(QFileDialog.DontUseNativeDialog, True)  # Use Qt's dialog for consistency
-        dialog.setAcceptMode(QFileDialog.AcceptSave)  # Ensure it's a save dialog
+                             "JPEG (*.jpg *.jpeg);;PNG (*.png);;WEBP (*.webp)")
+        dialog.setOption(QFileDialog.DontUseNativeDialog, True)
+        dialog.setAcceptMode(QFileDialog.AcceptSave)
         if dialog.exec() == QFileDialog.Accepted:
             selected_files = dialog.selectedFiles()
             if not selected_files:
@@ -426,11 +434,9 @@ class MainWindow(QMainWindow):
                 success = self.image_model.save(path, "WEBP", quality)
             elif path.lower().endswith(".png"):
                 success = self.image_model.save(path, "PNG")
-            elif path.lower().endswith(".bmp"):
-                success = self.image_model.save(path, "BMP")
             else:
                 # Default to PNG if extension not recognized
-                if not any(path.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.webp', '.bmp']):
+                if not any(path.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.webp']):
                     path += '.png'
                 success = self.image_model.save(path, "PNG")
 

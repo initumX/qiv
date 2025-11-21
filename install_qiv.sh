@@ -51,9 +51,9 @@ echo "Setting MIME type associations for images..."
 xdg-mime default "$DESKTOP_FILE_NAME" image/jpeg
 xdg-mime default "$DESKTOP_FILE_NAME" image/png
 xdg-mime default "$DESKTOP_FILE_NAME" image/webp
+xdg-mime default "$DESKTOP_FILE_NAME" image/heic
+xdg-mime default "$DESKTOP_FILE_NAME" image/heif
 xdg-mime default "$DESKTOP_FILE_NAME" image/gif
-xdg-mime default "$DESKTOP_FILE_NAME" image/bmp
-xdg-mime default "$DESKTOP_FILE_NAME" image/tiff
 
 # Generate uninstall script
 UNINSTALL_SCRIPT_PATH="$(pwd)/$UNINSTALL_SCRIPT_NAME"

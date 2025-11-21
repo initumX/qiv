@@ -37,8 +37,8 @@ class AboutDialog(QDialog):
 
         <h4>Features:</h4>
         <ul>
-            <li>View common image formats (JPG, WebP, PNG)</li>
-            <li>Basic editing: Rotate, Flip, Crop, Resize</li>
+            <li>View photo/screenshots: JPG/JPEG, WebP, PNG, HEIC, HEIF</li>
+            <li>Basic editing: Rotate, flip, crop, and resize</li>
             <li>Saving with quality control</li>
             <li>Zoom in/out, fit to window, original size</li>
             <li>Handy panning with arrows or middle mouse button</li>
