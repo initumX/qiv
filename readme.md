@@ -6,7 +6,7 @@ A lightweight and fast image viewer and editor built with PySide6, designed for 
 
 ## Features
 
-- **View photo/screenshots**: JPG/JPEG, WebP, PNG, HEIC, HEIF
+- **View photo/screenshots**: JPG/JPEG, WebP, PNG, HEIC/HEIF (Experimental)
 - **Basic editing**: Rotate, flip, crop, and resize while preserving aspect ratio
 - **Quality-controlled saving**: Save JPEGs with adjustable quality (default: 95), no unintended compression
 - **Navigation**: Zoom in/out, fit to window, display at original size, and pan with arrow keys or middle mouse button
@@ -15,6 +15,7 @@ A lightweight and fast image viewer and editor built with PySide6, designed for 
 - **EXIF metadata**: View image metadata in a dedicated panel
 
 ## NOTE
+- support of HEIC/HEIF is experimental, with some files it doesn't work properly 
 - qiv can't save files in HEIC/HEIF format (but can save them as JPEG, for example)
 
 ## Development & Deployment

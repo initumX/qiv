@@ -59,15 +59,16 @@ class ImageModel:
 
     def _pil_to_qimage(self, pil_image: Image.Image) -> QImage:
         """
-        Convert PIL Image to QImage - most compatible method.
+        Convert PIL Image to QImage - safe for all modes.
         """
-        # Convert to RGB if not already
-        if pil_image.mode != "RGB":
+        # Ensure RGB mode with proper conversion
+        if pil_image.mode not in ("RGB", "RGBA"):
+            # Convert to RGBA first, then to RGB
+            pil_image = pil_image.convert("RGBA")
             pil_image = pil_image.convert("RGB")
 
-        # Convert to bytes in RGB format
+        # Now convert to bytes
         data = pil_image.tobytes("raw", "RGB")
-        # Create QImage
         qimage = QImage(data, pil_image.width, pil_image.height, QImage.Format_RGB888)
         return qimage
 
