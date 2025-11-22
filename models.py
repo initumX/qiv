@@ -22,55 +22,16 @@ class ImageModel:
         self.rotation_angle: int = 0
 
     def load_from_path(self, path: str) -> bool:
-        """Load image from file path. Supports HEIC/HEIF via Pillow."""
-        if not os.path.isfile(path):
+        pixmap = QPixmap(path)
+        if pixmap.isNull():
+            print(f"Failed to load image: {path}")
             return False
-
-        # Handle HEIC/HEIF
-        if path.lower().endswith(('.heic', '.heif')):
-            try:
-                # Try importing pillow_heif
-                from pillow_heif import register_heif_opener
-                register_heif_opener()  # Register HEIF handler in PIL
-                from PIL import Image
-                pil_image = Image.open(path)
-                qimage = self._pil_to_qimage(pil_image)
-                pixmap = QPixmap.fromImage(qimage)
-                if pixmap.isNull():
-                    print(f"Failed to convert HEIC to QPixmap: {path}")
-                    return False
-                print(f"Successfully loaded HEIC: {path}")
-            except Exception as e:
-                print(f"Error loading HEIC {path}: {e}")
-                return False
-        else:
-            # Standard Qt pixmap load
-            pixmap = QPixmap(path)
-            if pixmap.isNull():
-                print(f"Failed to load image with QPixmap: {path}")
-                return False
-
         self.path = path
         self.original_pixmap = pixmap
         self.current_pixmap = pixmap
         self.size = pixmap.size()
         self.rotation_angle = 0
         return True
-
-    def _pil_to_qimage(self, pil_image: Image.Image) -> QImage:
-        """
-        Convert PIL Image to QImage - safe for all modes.
-        """
-        # Ensure RGB mode with proper conversion
-        if pil_image.mode not in ("RGB", "RGBA"):
-            # Convert to RGBA first, then to RGB
-            pil_image = pil_image.convert("RGBA")
-            pil_image = pil_image.convert("RGB")
-
-        # Now convert to bytes
-        data = pil_image.tobytes("raw", "RGB")
-        qimage = QImage(data, pil_image.width, pil_image.height, QImage.Format_RGB888)
-        return qimage
 
     def reload_from_path(self) -> bool:
         """Reload current image from its original path."""
@@ -198,7 +159,7 @@ class NavigatorModel:
 
     def _get_image_paths_in_directory(self, directory: str) -> List[str]:
         """Get sorted list of full image file paths in directory."""
-        image_extensions = {'.jpg', '.jpeg', '.png', '.webp', '.bmp', '.gif', '.tiff', '.heic', '.heif'}
+        image_extensions = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
         paths = []
 
         try:

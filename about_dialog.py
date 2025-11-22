@@ -37,7 +37,7 @@ class AboutDialog(QDialog):
 
         <h4>Features:</h4>
         <ul>
-            <li>View photo/screenshots: JPG/JPEG, WebP, PNG, HEIC, HEIF</li>
+            <li>View photo/screenshots: JPG/JPEG, WebP, PNG</li>
             <li>Basic editing: Rotate, flip, crop, and resize</li>
             <li>Saving with quality control</li>
             <li>Zoom in/out, fit to window, original size</li>
@@ -49,7 +49,7 @@ class AboutDialog(QDialog):
         </ul>
 
         <h4>Version:</h4>
-        <p>0.0.1</p>
+        <p>0.0.2</p>
 
         <h4>Author:</h4>
         <p>initum.x</p>

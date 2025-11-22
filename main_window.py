@@ -231,7 +231,7 @@ class MainWindow(QMainWindow):
 
     def open_image(self):
         home_dir = os.path.expanduser("~")
-        dialog = QFileDialog(self, "Open Image", home_dir, "Images (*.jpg *.jpeg *.png *.webp *.heic *.heif *.gif)")
+        dialog = QFileDialog(self, "Open Image", home_dir, "Images (*.jpg *.jpeg *.png *.webp *.gif)")
         dialog.setOption(QFileDialog.DontUseNativeDialog, True)
         if dialog.exec() == QFileDialog.Accepted:
             path = dialog.selectedFiles()[0]
