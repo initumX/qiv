@@ -27,5 +27,7 @@
         <file>zoom-out.svg</file>
         <file>redo.svg</file>
         <file>undo.svg</file>
+        <file>left-up.svg</file>
+        <file>right-up.svg</file>
     </qresource>
 </RCC>

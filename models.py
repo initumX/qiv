@@ -17,9 +17,10 @@ class ImageModel:
     """
     def __init__(self, path: Optional[str] = None):
         self.path: Optional[str] = path
+        self.original_pixmap: Optional[QPixmap] = None
         self.current_pixmap: Optional[QPixmap] = None
         self.size: Optional[QSize] = None
-        self.rotation_angle: int = 0
+        self.rotation_angle: float = 0.0
 
         self._history: deque = deque(maxlen=5)
         self._future: deque = deque()
@@ -55,7 +56,9 @@ class ImageModel:
         """Apply a new pixmap and save to history."""
         if new_pixmap and not new_pixmap.isNull():
             self._save_state()
-            self.current_pixmap = new_pixmap
+            self.original_pixmap = new_pixmap.copy()
+            self.current_pixmap = new_pixmap.copy()
+            self.rotation_angle = 0.0
             self.size = new_pixmap.size()
 
     def load_from_path(self, path: str) -> bool:
@@ -65,9 +68,10 @@ class ImageModel:
             return False
 
         self.path = path
+        self.original_pixmap = pixmap.copy()
         self.current_pixmap = pixmap
         self.size = pixmap.size()
-        self.rotation_angle = 0
+        self.rotation_angle = 0.0
 
         self._history.clear()
         self._future.clear()
@@ -97,10 +101,11 @@ class ImageModel:
             self._history.clear()
             self._future.clear()
 
+        self.original_pixmap = pixmap.copy()
         self.current_pixmap = pixmap.copy()
         self.size = pixmap.size()
         self.path = None
-        self.rotation_angle = 0
+        self.rotation_angle = 0.0
         self._history.append(self.current_pixmap.copy())
         return True
 
@@ -141,6 +146,14 @@ class ImageModel:
         self._save_state()
         qimage_resized = ResizeHelper.resize_pixmap(self.current_pixmap, width, height)
         self.current_pixmap = QPixmap.fromImage(qimage_resized)
+        self.size = self.current_pixmap.size()
+
+    def rotate_arbitrary(self, delta_angle: float):
+        if self.original_pixmap is None:
+            return
+        self.rotation_angle += delta_angle
+        transform = QTransform().rotate(self.rotation_angle)
+        self.current_pixmap = self.original_pixmap.transformed(transform, self._transform_mode())
         self.size = self.current_pixmap.size()
 
     def save(self, path: str, format: str = "JPEG", quality: int = 95):

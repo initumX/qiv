@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QStatusBar, QFileDialog, QLabel, QMessageBox
 )
 
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QKeySequence, QIcon
 from models import ImageModel, NavigatorModel, ViewState, ClipboardModel
 
@@ -19,6 +20,7 @@ class MainWindow(QMainWindow):
         self.setGeometry(100, 100, 1024, 768)
         app_icon = QIcon(":/icons/qiv.svg")
         self.setWindowIcon(app_icon)
+        self.setFocusPolicy(Qt.StrongFocus)
 
         # Models
         self.image_model = ImageModel()
@@ -60,6 +62,14 @@ class MainWindow(QMainWindow):
         self.rotate_ccw_action = QAction(QIcon(":/icons/ccw.svg"), "Rotate CCW", self)
         self.rotate_ccw_action.setShortcut("L")
         self.rotate_ccw_action.triggered.connect(self.rotate_ccw)
+
+        self.rotate_arbitrary_left_action = QAction(QIcon(":/icons/left-up.svg"), "Rotate Left 0,5°", self)
+        self.rotate_arbitrary_left_action.setShortcut("Ctrl+1")
+        self.rotate_arbitrary_left_action.triggered.connect(lambda: self._rotate_by(-0.2))
+
+        self.rotate_arbitrary_right_action = QAction(QIcon(":/icons/right-up.svg"), "Rotate Right 0,5°", self)
+        self.rotate_arbitrary_right_action.setShortcut("Ctrl+3")
+        self.rotate_arbitrary_right_action.triggered.connect(lambda: self._rotate_by(0.2))
 
         self.flip_h_action = QAction(QIcon(":/icons/flip-h.svg"), "Flip Horizontal", self)
         self.flip_h_action.setShortcut("H")
@@ -199,6 +209,8 @@ class MainWindow(QMainWindow):
         toolbar.addAction(self.rotate_ccw_action)
         toolbar.addAction(self.flip_h_action)
         toolbar.addAction(self.flip_v_action)
+        toolbar.addAction(self.rotate_arbitrary_left_action)
+        toolbar.addAction(self.rotate_arbitrary_right_action)
         toolbar.addAction(self.reload_action)
 
         toolbar.addSeparator()
@@ -359,6 +371,12 @@ class MainWindow(QMainWindow):
         self.image_model.rotate_90_counterclockwise()
         self.view.clear_selection()
         self.display_image()
+
+    def _rotate_by(self, delta):
+        self.image_model.rotate_arbitrary(delta)
+        self.view.clear_selection()
+        self.display_image()
+        self.status_bar.showMessage(f"Rotation: {self.image_model.rotation_angle:.1f}°")
 
     def flip_horizontal(self):
         """Flip image horizontally."""
