@@ -46,7 +46,7 @@ class MainWindow(QMainWindow):
         self.save_action.triggered.connect(self.save_image)
 
         self.reload_action = QAction(QIcon(":/icons/reload.svg"), "Reload", self)
-        self.reload_action.setShortcut("Ctrl+R")
+        self.reload_action.setShortcut("F5")
         self.reload_action.triggered.connect(self.reload_image)
 
         self.new_window_action = QAction(QIcon(":/icons/new-file.svg"), "New Window", self)
@@ -127,6 +127,17 @@ class MainWindow(QMainWindow):
         self.help_action.setShortcut("F1")
         self.help_action.triggered.connect(self.show_help)
 
+        # Undo/Redo
+        self.undo_action = QAction(QIcon(":/icons/undo.svg"), "Undo", self)
+        self.undo_action.setShortcut("Ctrl+Z")
+        self.undo_action.triggered.connect(self.undo)
+        self.undo_action.setEnabled(False)
+
+        self.redo_action = QAction(QIcon(":/icons/redo.svg"), "Redo", self)
+        self.redo_action.setShortcut("Ctrl+Y")
+        self.redo_action.triggered.connect(self.redo)
+        self.redo_action.setEnabled(False)
+
         # Menus
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu("File")
@@ -171,24 +182,24 @@ class MainWindow(QMainWindow):
         toolbar.addAction(self.open_action)
         toolbar.addAction(self.new_window_action)
         toolbar.addAction(self.save_action)
-        toolbar.addAction(self.reload_action)
+        toolbar.addAction(self.previous_action)
+        toolbar.addAction(self.next_action)
         toolbar.addAction(self.delete_action)
 
         toolbar.addSeparator()
-        toolbar.addAction(self.previous_action)
-        toolbar.addAction(self.next_action)
-
-        toolbar.addSeparator()
+        toolbar.addAction(self.undo_action)
+        toolbar.addAction(self.redo_action)
         toolbar.addAction(self.crop_action)
         toolbar.addAction(self.copy_action)
         toolbar.addAction(self.paste_action)
+        toolbar.addAction(self.resize_action)
 
         toolbar.addSeparator()
         toolbar.addAction(self.rotate_cw_action)
         toolbar.addAction(self.rotate_ccw_action)
         toolbar.addAction(self.flip_h_action)
         toolbar.addAction(self.flip_v_action)
-        toolbar.addAction(self.resize_action)
+        toolbar.addAction(self.reload_action)
 
         toolbar.addSeparator()
         toolbar.addAction(self.zoom_in_action)
@@ -281,6 +292,25 @@ class MainWindow(QMainWindow):
     def previous_image(self):
         self._navigate_image("previous")
 
+    def _update_undo_redo(self):
+        """Update Undo/Redo action availability based on model state."""
+        self.undo_action.setEnabled(self.image_model.can_undo())
+        self.redo_action.setEnabled(self.image_model.can_redo())
+
+    def undo(self):
+        if self.image_model.can_undo():
+            self.image_model.undo()
+            self.view.clear_selection()
+            self.display_image()
+            self._update_undo_redo()
+
+    def redo(self):
+        if self.image_model.can_redo():
+            self.image_model.redo()
+            self.view.clear_selection()
+            self.display_image()
+            self._update_undo_redo()
+
     def _update_status_info(self):
         """Update status bar with current file number and total count."""
         if self.navigator_model.total_count > 0:
@@ -300,6 +330,7 @@ class MainWindow(QMainWindow):
     def paste_image(self):
         if self.image_model.load_from_clipboard():
             self.display_image()
+            self._update_undo_redo()
             self.status_bar.showMessage("Pasted image from clipboard")
 
     def display_image(self):
@@ -332,14 +363,12 @@ class MainWindow(QMainWindow):
     def flip_horizontal(self):
         """Flip image horizontally."""
         self.image_model.flip_horizontal()
-        # Clear selection after flip since coordinates become invalid
         self.view.clear_selection()
         self.display_image()
 
     def flip_vertical(self):
         """Flip image vertically."""
         self.image_model.flip_vertical()
-        # Clear selection after flip since coordinates become invalid
         self.view.clear_selection()
         self.display_image()
 
@@ -349,8 +378,8 @@ class MainWindow(QMainWindow):
 
         rect = self.view.crop_area.rect
         cropped = self.image_model.current_pixmap.copy(rect)
-        self.image_model.current_pixmap = cropped
-        self.image_model.original_pixmap = cropped  # Update original to cropped
+
+        self.image_model.apply_to_current(cropped)
 
         # NEW: Copy cropped image to clipboard automatically
         self.clipboard_model.copy_image(cropped)
@@ -368,6 +397,7 @@ class MainWindow(QMainWindow):
 
         # Re-display the image
         self.display_image()
+        self._update_undo_redo()
 
     def copy_image(self):
         """Copy current image or selected area to clipboard."""
@@ -498,7 +528,6 @@ class MainWindow(QMainWindow):
                 else:
                     self.image_model.path = None
                     self.image_model.current_pixmap = None
-                    self.image_model.original_pixmap = None
                     self.display_image()
             else:
                 self.status_bar.showMessage("Failed to move file to trash")

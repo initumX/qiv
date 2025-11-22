@@ -2,6 +2,7 @@ from PySide6.QtGui import QPixmap, QTransform, QImage
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QRect, QSize, QPointF
 from typing import Optional, List
+from collections import deque
 from PIL import Image
 import os
 
@@ -16,21 +17,62 @@ class ImageModel:
     """
     def __init__(self, path: Optional[str] = None):
         self.path: Optional[str] = path
-        self.original_pixmap: Optional[QPixmap] = None
         self.current_pixmap: Optional[QPixmap] = None
         self.size: Optional[QSize] = None
         self.rotation_angle: int = 0
+
+        self._history: deque = deque(maxlen=5)
+        self._future: deque = deque()
+
+    def _save_state(self):
+        """Save current pixmap to history (only if valid)."""
+        if self.current_pixmap and not self.current_pixmap.isNull():
+            self._history.append(self.current_pixmap.copy())
+            self._future.clear()  # Clear redo stack
+
+    # === Undo / Redo ===
+    def can_undo(self) -> bool:
+        return len(self._history) > 1
+
+    def can_redo(self) -> bool:
+        return len(self._future) > 0
+
+    def undo(self):
+        if self.can_undo():
+            current = self._history.pop()
+            self._future.append(current)
+            self.current_pixmap = self._history[-1].copy()
+            self.size = self.current_pixmap.size()
+
+    def redo(self):
+        if self.can_redo():
+            next_state = self._future.pop()
+            self._history.append(next_state)
+            self.current_pixmap = next_state.copy()
+            self.size = self.current_pixmap.size()
+
+    def apply_to_current(self, new_pixmap: QPixmap):
+        """Apply a new pixmap and save to history."""
+        if new_pixmap and not new_pixmap.isNull():
+            self._save_state()
+            self.current_pixmap = new_pixmap
+            self.size = new_pixmap.size()
 
     def load_from_path(self, path: str) -> bool:
         pixmap = QPixmap(path)
         if pixmap.isNull():
             print(f"Failed to load image: {path}")
             return False
+
         self.path = path
-        self.original_pixmap = pixmap
         self.current_pixmap = pixmap
         self.size = pixmap.size()
         self.rotation_angle = 0
+
+        self._history.clear()
+        self._future.clear()
+        self._history.append(pixmap.copy())
+
         return True
 
     def reload_from_path(self) -> bool:
@@ -41,15 +83,25 @@ class ImageModel:
         return self.load_from_path(self.path)
 
     def load_from_clipboard(self) -> bool:
+        """Load image from system clipboard and add to history as a new state."""
         clipboard = QApplication.clipboard()
         pixmap = clipboard.pixmap()
         if pixmap.isNull():
             return False
-        self.path = None
-        self.original_pixmap = pixmap
-        self.current_pixmap = pixmap
+
+        # Save current state only if there's an existing non-null image
+        if self.current_pixmap and not self.current_pixmap.isNull():
+            self._save_state()
+        else:
+            # Starting fresh: clear history
+            self._history.clear()
+            self._future.clear()
+
+        self.current_pixmap = pixmap.copy()
         self.size = pixmap.size()
+        self.path = None
         self.rotation_angle = 0
+        self._history.append(self.current_pixmap.copy())
         return True
 
     def rotate_90_clockwise(self):
@@ -72,9 +124,7 @@ class ImageModel:
             return
         transform = QTransform().scale(-1, 1)
         self.current_pixmap = self.current_pixmap.transformed(transform, self._transform_mode())
-        # Also transform the original pixmap to maintain consistency
-        if self.original_pixmap:
-            self.original_pixmap = self.original_pixmap.transformed(transform, self._transform_mode())
+        self.size = self.current_pixmap.size()
 
     def flip_vertical(self):
         """Flip current pixmap vertically."""
@@ -82,17 +132,16 @@ class ImageModel:
             return
         transform = QTransform().scale(1, -1)
         self.current_pixmap = self.current_pixmap.transformed(transform, self._transform_mode())
-        # Also transform the original pixmap to maintain consistency
-        if self.original_pixmap:
-            self.original_pixmap = self.original_pixmap.transformed(transform, self._transform_mode())
+        self.size = self.current_pixmap.size()
 
     def resize(self, width: int, height: int):
         """Resize current pixmap using PIL for better quality."""
         if not self.current_pixmap:
             return
+        self._save_state()
         qimage_resized = ResizeHelper.resize_pixmap(self.current_pixmap, width, height)
         self.current_pixmap = QPixmap.fromImage(qimage_resized)
-        self.original_pixmap = self.current_pixmap  # Update original
+        self.size = self.current_pixmap.size()
 
     def save(self, path: str, format: str = "JPEG", quality: int = 95):
         """Save current pixmap using Pillow."""
