@@ -38,18 +38,18 @@ class AboutDialog(QDialog):
         <h4>Features:</h4>
         <ul>
             <li>View photo/screenshots: JPG/JPEG, WebP, PNG</li>
-            <li>Basic editing: Rotate, flip, crop, and resize</li>
+            <li>Basic editing: Rotate, flip, crop, copy/paste, resize</li>
+            <li>White balance and exposition: experimental features</li>
             <li>Saving with quality control</li>
             <li>Zoom in/out, fit to window, original size</li>
             <li>Handy panning with arrows or middle mouse button</li>
-            <li>Copy/paste selected areas or whole image</li>
             <li>File navigation (next/previous in folder)</li>
             <li>EXIF data display</li>
             <li>...</li>
         </ul>
-
+        
         <h4>Version:</h4>
-        <p>0.0.2</p>
+        <p>0.0.3</p>
 
         <h4>Author:</h4>
         <p>initum.x</p>
@@ -64,7 +64,8 @@ class AboutDialog(QDialog):
         <p>MIT License</p>
 
         <h4>Credits:</h4>
-        <p>Thank to Flaticons <a href="https://www.flaticon.com/">www.flaticon.com</a></p>
+        <p>Thanks to Flaticons for free icons <a href="https://www.flaticon.com/">www.flaticon.com</a></p>
+        <p>Thanks to Svgrepo for free icons <a href="https://www.svgrepo.com/">https://www.svgrepo.com/</a></p>
         <p>Thanks to the PySide6 team and the open-source community.</p>
         <p>Thanks to Free Internet.</p>
         """
