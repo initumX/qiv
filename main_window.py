@@ -45,11 +45,11 @@ class MainWindow(QMainWindow):
 
         self.save_action = QAction(QIcon(":/icons/save.svg"), "Save", self)
         self.save_action.setShortcut(QKeySequence.Save)
-        self.save_action.triggered.connect(self.save_image)
+        self.save_action.triggered.connect(lambda: self._safe_call(self.save_image))
 
         self.reload_action = QAction(QIcon(":/icons/reload.svg"), "Reload", self)
         self.reload_action.setShortcut("F5")
-        self.reload_action.triggered.connect(self.reload_image)
+        self.reload_action.triggered.connect(lambda: self._safe_call(self.reload_image))
 
         self.new_window_action = QAction(QIcon(":/icons/new-file.svg"), "New Window", self)
         self.new_window_action.setShortcut("Ctrl+N")
@@ -57,35 +57,39 @@ class MainWindow(QMainWindow):
 
         self.rotate_cw_action = QAction(QIcon(":/icons/cw.svg"), "Rotate CW", self)
         self.rotate_cw_action.setShortcut("R")
-        self.rotate_cw_action.triggered.connect(self.rotate_cw)
+        self.rotate_cw_action.triggered.connect(lambda: self._safe_call(self.rotate_cw))
 
         self.rotate_ccw_action = QAction(QIcon(":/icons/ccw.svg"), "Rotate CCW", self)
         self.rotate_ccw_action.setShortcut("L")
-        self.rotate_ccw_action.triggered.connect(self.rotate_ccw)
+        self.rotate_ccw_action.triggered.connect(lambda: self._safe_call(self.rotate_ccw))
 
         self.rotate_arbitrary_left_action = QAction(QIcon(":/icons/left-up.svg"), "Rotate Right 0,5°", self)
         self.rotate_arbitrary_left_action.setShortcut("Ctrl+1")
-        self.rotate_arbitrary_left_action.triggered.connect(lambda: self._rotate_by(0.2))
+        self.rotate_arbitrary_left_action.triggered.connect(
+            lambda: self._safe_call(lambda: self._rotate_by(0.2))
+        )
 
         self.rotate_arbitrary_right_action = QAction(QIcon(":/icons/right-up.svg"), "Rotate Left 0,5°", self)
         self.rotate_arbitrary_right_action.setShortcut("Ctrl+3")
-        self.rotate_arbitrary_right_action.triggered.connect(lambda: self._rotate_by(-0.2))
+        self.rotate_arbitrary_right_action.triggered.connect(
+            lambda: self._safe_call(lambda: self._rotate_by(-0.2))
+        )
 
         self.flip_h_action = QAction(QIcon(":/icons/flip-h.svg"), "Flip Horizontal", self)
         self.flip_h_action.setShortcut("H")
-        self.flip_h_action.triggered.connect(self.flip_horizontal)
+        self.flip_h_action.triggered.connect(lambda: self._safe_call(self.flip_horizontal))
 
         self.flip_v_action = QAction(QIcon(":/icons/flip-v.svg"), "Flip Vertical", self)
         self.flip_v_action.setShortcut("V")
-        self.flip_v_action.triggered.connect(self.flip_vertical)
+        self.flip_v_action.triggered.connect(lambda: self._safe_call(self.flip_vertical))
 
         self.crop_action = QAction(QIcon(":/icons/crop.svg"), "Crop", self)
         self.crop_action.setShortcut(QKeySequence.Cut)
-        self.crop_action.triggered.connect(self.crop_image)
+        self.crop_action.triggered.connect(lambda: self._safe_call(self.crop_image))
 
         self.copy_action = QAction(QIcon(":/icons/copy.svg"), "Copy", self)
         self.copy_action.setShortcut(QKeySequence.Copy)
-        self.copy_action.triggered.connect(self.copy_image)
+        self.copy_action.triggered.connect(lambda: self._safe_call(self.copy_image))
 
         self.paste_action = QAction(QIcon(":/icons/paste.svg"), "Paste", self)
         self.paste_action.setShortcut(QKeySequence.Paste)
@@ -102,32 +106,32 @@ class MainWindow(QMainWindow):
         # Zoom Actions
         self.zoom_in_action = QAction(QIcon(":/icons/zoom-in.svg"), "Zoom In", self)
         self.zoom_in_action.setShortcut("+")
-        self.zoom_in_action.triggered.connect(self.view.zoom_in)
+        self.zoom_in_action.triggered.connect(lambda: self._safe_call(self.view.zoom_in))
 
         self.zoom_out_action = QAction(QIcon(":/icons/zoom-out.svg"), "Zoom Out", self)
         self.zoom_out_action.setShortcut("-")
-        self.zoom_out_action.triggered.connect(self.view.zoom_out)
+        self.zoom_out_action.triggered.connect(lambda: self._safe_call(self.view.zoom_out))
 
         self.original_size_action = QAction(QIcon(":/icons/zoom-original.svg"), "Original Size", self)
         self.original_size_action.setShortcut("=")
-        self.original_size_action.triggered.connect(self.view.reset_zoom)
+        self.original_size_action.triggered.connect(lambda: self._safe_call(self.view.reset_zoom))
 
         self.fit_to_window_action = QAction(QIcon(":/icons/zoom-fit.svg"), "Fit To Window", self)
         self.fit_to_window_action.setShortcut("W")
-        self.fit_to_window_action.triggered.connect(self.view.fit_to_view)
+        self.fit_to_window_action.triggered.connect(lambda: self._safe_call(self.view.fit_to_view))
 
         # EXIF
         self.exif_action = QAction(QIcon(":/icons/info.svg"), "Show EXIF", self)
-        self.exif_action.triggered.connect(self.show_exif)
+        self.exif_action.triggered.connect(lambda: self._safe_call(self.show_exif))
 
         # Resize
         self.resize_action = QAction(QIcon(":/icons/resize.svg"), "Resize", self)
         self.resize_action.setShortcut("Ctrl+T")
-        self.resize_action.triggered.connect(self.resize_image)
+        self.resize_action.triggered.connect(lambda: self._safe_call(self.resize_image))
 
         self.delete_action = QAction(QIcon(":/icons/trash.svg"), "Move to Trash", self)
         self.delete_action.setShortcut("Delete")
-        self.delete_action.triggered.connect(self.delete_current_file)
+        self.delete_action.triggered.connect(lambda: self._safe_call(self.delete_current_file))
 
         self.exit_action = QAction("Exit", self)
         self.exit_action.setShortcut(QKeySequence("Q"))
@@ -138,13 +142,17 @@ class MainWindow(QMainWindow):
         self.help_action.triggered.connect(self.show_help)
 
         self.wb_action = QAction(QIcon(":/icons/wb.svg"), "White Balance (Click Neutral)", self)
-        self.wb_action.triggered.connect(self.toggle_wb_mode)
+        self.wb_action.triggered.connect(lambda: self._safe_call(self.toggle_wb_mode))
 
         self.exposure_up_action = QAction(QIcon(":/icons/sun-up.svg"), "+0.1 EV", self)
-        self.exposure_up_action.triggered.connect(lambda: self._adjust_exposure(+0.1))
+        self.exposure_up_action.triggered.connect(
+            lambda: self._safe_call(lambda: self._adjust_exposure(+0.1))
+        )
 
         self.exposure_down_action = QAction(QIcon(":/icons/sun-down.svg"), "-0.1 EV", self)
-        self.exposure_down_action.triggered.connect(lambda: self._adjust_exposure(-0.1))
+        self.exposure_down_action.triggered.connect(
+            lambda: self._safe_call(lambda: self._adjust_exposure(-0.1))
+        )
 
         # Menus
         menu_bar = self.menuBar()
@@ -244,6 +252,12 @@ class MainWindow(QMainWindow):
         toolbar2.addAction(self.rotate_arbitrary_left_action)
         toolbar2.addAction(self.rotate_arbitrary_right_action)
 
+    def _safe_call(self, func, message="No image loaded"):
+        if not self.image_model.current_pixmap or self.image_model.current_pixmap.isNull():
+            self.status_bar.showMessage(message)
+            return
+        func()
+
 
     def load_file_from_args(self):
         """Load file passed as command-line argument."""
@@ -272,8 +286,8 @@ class MainWindow(QMainWindow):
                 self.display_image()
                 self._update_status_info()
                 formatted_path = self.navigator_model.format_path_for_display(path)
-                self.status_bar.showMessage(f"Opened: {formatted_path}")
-                self.view.set_tool_mode(ToolMode.NONE)
+                #self.status_bar.showMessage(f"Opened: {formatted_path}")
+                self.view.set_tool_mode(ToolMode.NONE, f"Opened: {formatted_path}")
 
     def reload_image(self):
         """Reload current image from file."""
@@ -342,30 +356,30 @@ class MainWindow(QMainWindow):
         self.view.set_pixmap(self.image_model.current_pixmap)
 
     def rotate_cw(self):
-        self.view.set_tool_mode(ToolMode.NONE)
+        self.view.set_tool_mode(ToolMode.NONE,"")
         self.image_model.rotate_90_clockwise()
         self.display_image()
 
     def rotate_ccw(self):
-        self.view.set_tool_mode(ToolMode.NONE)
+        self.view.set_tool_mode(ToolMode.NONE, "")
         self.image_model.rotate_90_counterclockwise()
         self.display_image()
 
     def _rotate_by(self, delta):
-        self.view.set_tool_mode(ToolMode.NONE)
+        self.view.set_tool_mode(ToolMode.NONE, "")
         self.image_model.rotate_arbitrary(delta)
         self.display_image()
         self.status_bar.showMessage(f"Rotation: {self.image_model.rotation_angle:.1f}°")
 
     def flip_horizontal(self):
         """Flip image horizontally."""
-        self.view.set_tool_mode(ToolMode.NONE)
+        self.view.set_tool_mode(ToolMode.NONE, "")
         self.image_model.flip_horizontal()
         self.display_image()
 
     def flip_vertical(self):
         """Flip image vertically."""
-        self.view.set_tool_mode(ToolMode.NONE)
+        self.view.set_tool_mode(ToolMode.NONE, "")
         self.image_model.flip_vertical()
         self.display_image()
 
@@ -375,10 +389,9 @@ class MainWindow(QMainWindow):
     def apply_white_balance(self, x: int, y: int):
         self.image_model.apply_white_balance_from_point(x, y)
         self.display_image()
-        self.status_bar.showMessage("White balance applied")
 
     def _adjust_exposure(self, delta_ev: float):
-        self.view.set_tool_mode(ToolMode.NONE)
+        self.view.set_tool_mode(ToolMode.NONE, "")
         if not self.image_model.original_pixmap:
             return
         self.image_model.adjust_exposure(delta_ev)
@@ -412,21 +425,9 @@ class MainWindow(QMainWindow):
             cropped = self.image_model.current_pixmap.copy(self.view.crop_area.rect)
             self.clipboard_model.copy_image(cropped)
             self.status_bar.showMessage("Selected area copied to clipboard")
-            return
-
-        self.view.set_tool_mode(ToolMode.COPY_AREA)
-
-    def copy_selected_area(self):
-        """Called from ImageView after Enter in COPY_AREA mode."""
-        if self.view.crop_area.is_active and not self.view.crop_area.rect.isNull():
-            cropped = self.image_model.current_pixmap.copy(self.view.crop_area.rect)
-            self.clipboard_model.copy_image(cropped)
-            self.status_bar.showMessage("Selected area copied to clipboard")
         else:
-            # Fallback: copy full image
             self.clipboard_model.copy_image(self.image_model.current_pixmap)
             self.status_bar.showMessage("Full image copied to clipboard")
-        self.view.set_tool_mode(ToolMode.NONE)
 
     def show_exif(self):
         """Show EXIF data in a separate dialog."""
@@ -449,7 +450,6 @@ class MainWindow(QMainWindow):
         # Remove extension if source format is NOT one we can save to
         if initial_path:
             name, ext = os.path.splitext(initial_path)
-            # If original format is NOT in our saveable formats → strip extension
             if ext.lower() not in ('.jpg', '.jpeg', '.png', '.webp'):
                 initial_path = name
 
@@ -506,7 +506,7 @@ class MainWindow(QMainWindow):
 
     def resize_image(self):
         """Resize image with aspect ratio preservation."""
-        self.view.set_tool_mode(ToolMode.NONE)
+        self.view.set_tool_mode(ToolMode.NONE, "")
         if not self.image_model.current_pixmap:
             return
 
@@ -525,7 +525,7 @@ class MainWindow(QMainWindow):
 
     def delete_current_file(self):
         """Move current file to trash."""
-        self.view.set_tool_mode(ToolMode.NONE)
+        self.view.set_tool_mode(ToolMode.NONE, "")
         if not self.image_model.path:
             self.status_bar.showMessage("No file to delete")
             return
@@ -563,7 +563,7 @@ class MainWindow(QMainWindow):
 
     def show_help(self):
         """Show the About dialog."""
-        self.view.set_tool_mode(ToolMode.NONE)
+        self.view.set_tool_mode(ToolMode.NONE, "")
         from about_dialog import AboutDialog
         dialog = AboutDialog(self)
         dialog.exec() # exec() modal one, show() - not modal

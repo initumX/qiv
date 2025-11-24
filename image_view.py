@@ -15,7 +15,6 @@ class ToolMode(Enum):
     NONE = 0
     WHITE_BALANCE = 1
     CROP = 2
-    COPY_AREA = 3
 
 class ImageView(QGraphicsView):
     """
@@ -40,12 +39,12 @@ class ImageView(QGraphicsView):
         self.magnifier.hide()
         self.magnifier_half_size = 11
 
-    def set_tool_mode(self, mode: ToolMode):
+    def set_tool_mode(self, mode: ToolMode, message: Optional[str] = None):
         # --- Exit current mode ---
         if self._tool_mode == ToolMode.WHITE_BALANCE:
             self.magnifier.hide()
             self.setMouseTracking(False)
-        elif self._tool_mode in (ToolMode.CROP, ToolMode.COPY_AREA):
+        elif self._tool_mode == ToolMode.CROP:
             self._clear_selection()
 
         self._tool_mode = mode
@@ -55,34 +54,33 @@ class ImageView(QGraphicsView):
             self.setCursor(Qt.CrossCursor)
             self.setMouseTracking(True)
             self.setFocus()
-            if hasattr(self.parent(), 'status_bar'):
-                self.parent().status_bar.showMessage("Click on neutral area...")
+            default_msg = "Click on a neutral gray area to apply white balance..."
 
         elif mode == ToolMode.CROP:
             self.setCursor(Qt.CrossCursor)
             self.setMouseTracking(False)
             self._clear_selection()
             self.setFocus()
-            if hasattr(self.parent(), 'status_bar'):
-                self.parent().status_bar.showMessage("Select area and press Enter to crop...")
-
-        elif mode == ToolMode.COPY_AREA:
-            self.setCursor(Qt.CrossCursor)
-            self.setMouseTracking(False)
-            self._clear_selection()
-            self.setFocus()
-            if hasattr(self.parent(), 'status_bar'):
-                self.parent().status_bar.showMessage("Select area and press Enter to copy...")
+            default_msg = "Select area and press Enter to crop"
 
         elif mode == ToolMode.NONE:
             self.setCursor(Qt.ArrowCursor)
             self._clear_selection()
-            if hasattr(self.parent(), 'status_bar'):
-                self.parent().status_bar.showMessage("Ready")
+            default_msg = "Ready"
 
         else:
-            # fallback
             self.setCursor(Qt.ArrowCursor)
+            default_msg = ""
+
+        if message is None:
+            msg = default_msg
+        elif message == "":
+            msg = None
+        else:
+            msg = message
+
+        if msg is not None and hasattr(self.parent(), 'status_bar'):
+            self.parent().status_bar.showMessage(msg)
 
     def set_pixmap(self, pixmap: Optional[QPixmap]):
         self._clear_selection()
@@ -111,18 +109,18 @@ class ImageView(QGraphicsView):
                 x = max(0, min(pos.x(), pixmap.width() - 1))
                 y = max(0, min(pos.y(), pixmap.height() - 1))
                 self.parent().apply_white_balance(int(x), int(y))
-            self.set_tool_mode(ToolMode.NONE)
+            self.set_tool_mode(ToolMode.NONE, "White balance applied")
             event.accept()
             return
 
         # Right click → Fit to Window (works everywhere)
         if event.button() == Qt.RightButton:
-            self.set_tool_mode(ToolMode.NONE)
+            self.set_tool_mode(ToolMode.NONE, "Fit to window")
             self.fit_to_view()
             event.accept()
             return
 
-        if event.button() == Qt.LeftButton and self._tool_mode in (ToolMode.CROP, ToolMode.COPY_AREA):
+        if event.button() == Qt.LeftButton and self._tool_mode == ToolMode.CROP:
             click_pos = event.pos()
             # Cancel any pending double-click detection for crop
             if self._click_timer is not None:
@@ -266,19 +264,11 @@ class ImageView(QGraphicsView):
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
             # Global Esc
-            self.set_tool_mode(ToolMode.NONE)
-            if hasattr(self.parent(), 'status_bar'):
-                self.parent().status_bar.showMessage("Operation cancelled")
-            event.accept()
+            self.set_tool_mode(ToolMode.NONE, "Operation cancelled")
             return
 
         if self._tool_mode == ToolMode.CROP and event.key() in (Qt.Key_Enter, Qt.Key_Return):
             self._apply_crop()
-            event.accept()
-            return
-
-        if self._tool_mode == ToolMode.COPY_AREA and event.key() in (Qt.Key_Enter, Qt.Key_Return):
-            self._apply_copy_area()
             event.accept()
             return
 
@@ -301,18 +291,10 @@ class ImageView(QGraphicsView):
         print(f"crop_area.is_active: {self.crop_area.is_active}")
         print(f"rect: {self.crop_area.rect}, isNull: {self.crop_area.rect.isNull()}")
         if not self.crop_area.is_active or self.crop_area.rect.isNull():
-            self.view.set_tool_mode(ToolMode.CROP)
+            self.set_tool_mode(ToolMode.NONE, "Crop cancelled: no valid selection")
             return
         if hasattr(self.parent(), 'finalize_crop'):
             self.parent().finalize_crop()
-        self.set_tool_mode(ToolMode.NONE)
-
-    def _apply_copy_area(self):
-        if not self.crop_area.is_active or self.crop_area.rect.isNull():
-            self.view.set_tool_mode(ToolMode.COPY_AREA)
-            return
-        if hasattr(self.parent(), 'copy_selected_area'):
-            self.parent().copy_selected_area()
         self.set_tool_mode(ToolMode.NONE)
 
     def fit_to_view(self):
@@ -360,7 +342,7 @@ class ImageView(QGraphicsView):
 
     def _zoom_at_point(self, cursor_pos, factor):
         """Zoom with cursor 'sticking' to the same image point."""
-        self.set_tool_mode(ToolMode.NONE)
+        self.set_tool_mode(ToolMode.NONE, "")
         if not self.scene() or self.scene().itemsBoundingRect().isNull():
             return
 
@@ -374,7 +356,7 @@ class ImageView(QGraphicsView):
 
     def _perform_zoom_simple(self, factor):
         """Fallback zoom when cursor is outside view (e.g. via keyboard focus without mouse)."""
-        self.set_tool_mode(ToolMode.NONE)
+        self.set_tool_mode(ToolMode.NONE, "")
         if not self.scene() or self.scene().itemsBoundingRect().isNull():
             return
         self.scale(factor, factor)
