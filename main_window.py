@@ -63,13 +63,13 @@ class MainWindow(QMainWindow):
         self.rotate_ccw_action.setShortcut("L")
         self.rotate_ccw_action.triggered.connect(self.rotate_ccw)
 
-        self.rotate_arbitrary_left_action = QAction(QIcon(":/icons/left-up.svg"), "Rotate Left 0,5°", self)
+        self.rotate_arbitrary_left_action = QAction(QIcon(":/icons/left-up.svg"), "Rotate Right 0,5°", self)
         self.rotate_arbitrary_left_action.setShortcut("Ctrl+1")
-        self.rotate_arbitrary_left_action.triggered.connect(lambda: self._rotate_by(-0.2))
+        self.rotate_arbitrary_left_action.triggered.connect(lambda: self._rotate_by(0.2))
 
-        self.rotate_arbitrary_right_action = QAction(QIcon(":/icons/right-up.svg"), "Rotate Right 0,5°", self)
+        self.rotate_arbitrary_right_action = QAction(QIcon(":/icons/right-up.svg"), "Rotate Left 0,5°", self)
         self.rotate_arbitrary_right_action.setShortcut("Ctrl+3")
-        self.rotate_arbitrary_right_action.triggered.connect(lambda: self._rotate_by(0.2))
+        self.rotate_arbitrary_right_action.triggered.connect(lambda: self._rotate_by(-0.2))
 
         self.flip_h_action = QAction(QIcon(":/icons/flip-h.svg"), "Flip Horizontal", self)
         self.flip_h_action.setShortcut("H")
@@ -190,23 +190,24 @@ class MainWindow(QMainWindow):
         toolbar.addAction(self.open_action)
         toolbar.addAction(self.new_window_action)
         toolbar.addAction(self.save_action)
+        toolbar.addAction(self.reload_action)
+        toolbar.addAction(self.delete_action)
+
+        toolbar.addSeparator()
         toolbar.addAction(self.previous_action)
         toolbar.addAction(self.next_action)
-        toolbar.addAction(self.delete_action)
 
         toolbar.addSeparator()
         toolbar.addAction(self.crop_action)
         toolbar.addAction(self.copy_action)
         toolbar.addAction(self.paste_action)
         toolbar.addAction(self.resize_action)
-        toolbar.addAction(self.wb_action)
 
         toolbar.addSeparator()
         toolbar.addAction(self.rotate_cw_action)
         toolbar.addAction(self.rotate_ccw_action)
         toolbar.addAction(self.flip_h_action)
         toolbar.addAction(self.flip_v_action)
-        toolbar.addAction(self.reload_action)
 
         toolbar.addSeparator()
         toolbar.addAction(self.zoom_in_action)
@@ -236,10 +237,13 @@ class MainWindow(QMainWindow):
         self.addToolBar(Qt.LeftToolBarArea, toolbar2)
         self.menuBar().addAction(toolbar2.toggleViewAction())
 
+        toolbar2.addAction(self.exposure_up_action)
+        toolbar2.addAction(self.exposure_down_action)
+        toolbar2.addAction(self.wb_action)
+
         toolbar2.addAction(self.rotate_arbitrary_left_action)
         toolbar2.addAction(self.rotate_arbitrary_right_action)
-        toolbar2.addAction(self.exposure_down_action)
-        toolbar2.addAction(self.exposure_up_action)
+
 
     def load_file_from_args(self):
         """Load file passed as command-line argument."""
@@ -269,6 +273,7 @@ class MainWindow(QMainWindow):
                 self._update_status_info()
                 formatted_path = self.navigator_model.format_path_for_display(path)
                 self.status_bar.showMessage(f"Opened: {formatted_path}")
+                self.view.set_tool_mode(ToolMode.NONE)
 
     def reload_image(self):
         """Reload current image from file."""

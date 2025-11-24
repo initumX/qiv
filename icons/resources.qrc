@@ -32,6 +32,5 @@
         <file>wb.svg</file>
         <file>sun-up.svg</file>
         <file>sun-down.svg</file>
-        <file>target.svg</file>
     </qresource>
 </RCC>
