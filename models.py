@@ -2,7 +2,7 @@ from PySide6.QtGui import QPixmap, QTransform, QImage
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QRect, QSize, QPointF
 from typing import Optional, List
-from collections import deque
+from constants import WB_MAX_HALF_SIZE, WB_MIN_DIVISOR
 from PIL import Image
 import os
 
@@ -21,41 +21,11 @@ class ImageModel:
         self.current_pixmap: Optional[QPixmap] = None
         self.size: Optional[QSize] = None
         self.rotation_angle: float = 0.0
-
-        self._history: deque = deque(maxlen=5)
-        self._future: deque = deque()
-
-    def _save_state(self):
-        """Save current pixmap to history (only if valid)."""
-        if self.current_pixmap and not self.current_pixmap.isNull():
-            self._history.append(self.current_pixmap.copy())
-            self._future.clear()  # Clear redo stack
-
-    # === Undo / Redo ===
-    def can_undo(self) -> bool:
-        return len(self._history) > 1
-
-    def can_redo(self) -> bool:
-        return len(self._future) > 0
-
-    def undo(self):
-        if self.can_undo():
-            current = self._history.pop()
-            self._future.append(current)
-            self.current_pixmap = self._history[-1].copy()
-            self.size = self.current_pixmap.size()
-
-    def redo(self):
-        if self.can_redo():
-            next_state = self._future.pop()
-            self._history.append(next_state)
-            self.current_pixmap = next_state.copy()
-            self.size = self.current_pixmap.size()
+        self.total_exposure_ev: float = 0.0
 
     def apply_to_current(self, new_pixmap: QPixmap):
         """Apply a new pixmap and save to history."""
         if new_pixmap and not new_pixmap.isNull():
-            self._save_state()
             self.original_pixmap = new_pixmap.copy()
             self.current_pixmap = new_pixmap.copy()
             self.rotation_angle = 0.0
@@ -72,11 +42,7 @@ class ImageModel:
         self.current_pixmap = pixmap
         self.size = pixmap.size()
         self.rotation_angle = 0.0
-
-        self._history.clear()
-        self._future.clear()
-        self._history.append(pixmap.copy())
-
+        self.total_exposure_ev = 0.0
         return True
 
     def reload_from_path(self) -> bool:
@@ -93,20 +59,12 @@ class ImageModel:
         if pixmap.isNull():
             return False
 
-        # Save current state only if there's an existing non-null image
-        if self.current_pixmap and not self.current_pixmap.isNull():
-            self._save_state()
-        else:
-            # Starting fresh: clear history
-            self._history.clear()
-            self._future.clear()
-
         self.original_pixmap = pixmap.copy()
         self.current_pixmap = pixmap.copy()
         self.size = pixmap.size()
         self.path = None
         self.rotation_angle = 0.0
-        self._history.append(self.current_pixmap.copy())
+        self.total_exposure_ev = 0.0
         return True
 
     def rotate_90_clockwise(self):
@@ -143,7 +101,6 @@ class ImageModel:
         """Resize current pixmap using PIL for better quality."""
         if not self.current_pixmap:
             return
-        self._save_state()
         qimage_resized = ResizeHelper.resize_pixmap(self.current_pixmap, width, height)
         self.current_pixmap = QPixmap.fromImage(qimage_resized)
         self.size = self.current_pixmap.size()
@@ -175,6 +132,120 @@ class ImageModel:
             img.save(path, format)
 
         return True
+
+    def apply_white_balance_from_point(self, x: int, y: int):
+        """
+        Apply white balance correction so that the given (r, g, b) becomes neutral.
+        The green channel is used as reference.
+        """
+        if not self.current_pixmap:
+            return
+
+        qimage = self.current_pixmap.toImage()
+        if not qimage.valid(x, y):
+            return
+
+        w, h = qimage.width(), qimage.height()
+        min_dim = min(w, h)
+        window = min(WB_MAX_HALF_SIZE, max(1, min_dim // WB_MIN_DIVISOR))
+
+        total_r = total_g = total_b = 0
+        count = 0
+        for dx in range(-window, window + 1):
+            for dy in range(-window, window + 1):
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < qimage.width() and 0 <= ny < qimage.height():
+                    pixel = qimage.pixel(nx, ny)
+                    # Извлекаем компоненты (без создания QColor для скорости)
+                    b_val = pixel & 0xFF
+                    g_val = (pixel >> 8) & 0xFF
+                    r_val = (pixel >> 16) & 0xFF
+                    total_r += r_val
+                    total_g += g_val
+                    total_b += b_val
+                    count += 1
+
+        if count == 0:
+            return
+
+        r = total_r / count
+        g = total_g / count
+        b = total_b / count
+
+        if g == 0:
+            return
+
+        # Avoid division by zero
+        gain_r = g / r if r != 0 else 1.0
+        gain_b = g / b if b != 0 else 1.0
+
+
+        # Convert to PIL
+        qimage = self.current_pixmap.toImage()
+
+        img = Image.fromqimage(qimage)
+
+        # Apply gains per channel
+        if img.mode == "RGB":
+            r_band, g_band, b_band = img.split()
+            r_band = r_band.point(lambda x: min(255, int(x * gain_r)))
+            b_band = b_band.point(lambda x: min(255, int(x * gain_b)))
+            corrected = Image.merge("RGB", (r_band, g_band, b_band))
+        elif img.mode == "RGBA":
+            r_band, g_band, b_band, a_band = img.split()
+            r_band = r_band.point(lambda x: min(255, int(x * gain_r)))
+            b_band = b_band.point(lambda x: min(255, int(x * gain_b)))
+            corrected = Image.merge("RGBA", (r_band, g_band, b_band, a_band))
+        else:
+            # Convert unsupported modes to RGB
+            img = img.convert("RGB")
+            r_band, g_band, b_band = img.split()
+            r_band = r_band.point(lambda x: min(255, int(x * gain_r)))
+            b_band = b_band.point(lambda x: min(255, int(x * gain_b)))
+            corrected = Image.merge("RGB", (r_band, g_band, b_band))
+
+        # Convert back to QPixmap
+        qimage_out = corrected.toqimage()
+        self.current_pixmap = QPixmap.fromImage(qimage_out)
+        self.size = self.current_pixmap.size()
+
+        # Reset rotation context (optional but clean)
+        if self.original_pixmap is not None:
+            self.original_pixmap = self.current_pixmap.copy()
+            self.rotation_angle = 0.0
+
+    def adjust_exposure(self, delta_ev: float):
+        """Apply exposure change relative to original image."""
+        if self.original_pixmap is None:
+            return
+        self.total_exposure_ev += delta_ev
+        # Apply total exposure to ORIGINAL
+        gain = 2.0 ** self.total_exposure_ev
+        qimage = self.original_pixmap.toImage()
+        img = Image.fromqimage(qimage)
+        if img.mode not in ("RGB", "RGBA"):
+            img = img.convert("RGB")
+        bands = img.split()
+        if img.mode == "RGB":
+            r, g, b = bands
+            r = r.point(lambda x: min(255, int(x * gain)))
+            g = g.point(lambda x: min(255, int(x * gain)))
+            b = b.point(lambda x: min(255, int(x * gain)))
+            corrected = Image.merge("RGB", (r, g, b))
+        else:  # RGBA
+            r, g, b, a = bands
+            r = r.point(lambda x: min(255, int(x * gain)))
+            g = g.point(lambda x: min(255, int(x * gain)))
+            b = b.point(lambda x: min(255, int(x * gain)))
+            corrected = Image.merge("RGBA", (r, g, b, a))
+        qimage_out = corrected.toqimage()
+        self.current_pixmap = QPixmap.fromImage(qimage_out)
+        self.size = self.current_pixmap.size()
+        # Keep rotation context clean
+        self.rotation_angle = 0.0
+
+    def get_total_exposure_ev(self) -> float:
+        return self.total_exposure_ev
 
     def _transform_mode(self):
         from PySide6.QtCore import Qt
@@ -358,3 +429,4 @@ class ClipboardModel:
     def paste_image(self) -> Optional[QPixmap]:
         pixmap = self.clipboard.pixmap()
         return pixmap if not pixmap.isNull() else None
+

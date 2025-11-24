@@ -1,7 +1,7 @@
 import os, sys
 from PySide6.QtWidgets import (
     QMainWindow, QGraphicsScene, QGraphicsPixmapItem,
-    QStatusBar, QFileDialog, QLabel, QMessageBox
+    QStatusBar, QFileDialog, QLabel, QMessageBox, QToolBar
 )
 
 from PySide6.QtCore import Qt
@@ -9,7 +9,7 @@ from PySide6.QtGui import QAction, QKeySequence, QIcon
 from models import ImageModel, NavigatorModel, ViewState, ClipboardModel
 
 from image_helpers import ExifHelper, ResizeHelper, SaveHelper, move_to_trash
-from image_view import ImageView
+from image_view import ImageView, ToolMode
 import resources_rc
 
 
@@ -137,16 +137,18 @@ class MainWindow(QMainWindow):
         self.help_action.setShortcut("F1")
         self.help_action.triggered.connect(self.show_help)
 
-        # Undo/Redo
-        self.undo_action = QAction(QIcon(":/icons/undo.svg"), "Undo", self)
-        self.undo_action.setShortcut("Ctrl+Z")
-        self.undo_action.triggered.connect(self.undo)
-        self.undo_action.setEnabled(False)
+        self.wb_action = QAction(QIcon(":/icons/wb.svg"), "White Balance (Click Neutral)", self)
+        self.wb_action.triggered.connect(self.toggle_wb_mode)
 
-        self.redo_action = QAction(QIcon(":/icons/redo.svg"), "Redo", self)
-        self.redo_action.setShortcut("Ctrl+Y")
-        self.redo_action.triggered.connect(self.redo)
-        self.redo_action.setEnabled(False)
+        self.exposure_up_action = QAction(QIcon(":/icons/sun-up.svg"), "+0.1 EV", self)
+        self.exposure_up_action.triggered.connect(lambda: self._adjust_exposure(+0.1))
+
+        self.exposure_down_action = QAction(QIcon(":/icons/sun-down.svg"), "-0.1 EV", self)
+        self.exposure_down_action.triggered.connect(lambda: self._adjust_exposure(-0.1))
+
+        self.set_zoom_focus_action = QAction(QIcon(":/icons/target.svg"), "Set Zoom Focus", self)
+        self.set_zoom_focus_action.setShortcut("Z")
+        self.set_zoom_focus_action.triggered.connect(self.set_zoom_focus_mode)
 
         # Menus
         menu_bar = self.menuBar()
@@ -197,23 +199,21 @@ class MainWindow(QMainWindow):
         toolbar.addAction(self.delete_action)
 
         toolbar.addSeparator()
-        toolbar.addAction(self.undo_action)
-        toolbar.addAction(self.redo_action)
         toolbar.addAction(self.crop_action)
         toolbar.addAction(self.copy_action)
         toolbar.addAction(self.paste_action)
         toolbar.addAction(self.resize_action)
+        toolbar.addAction(self.wb_action)
 
         toolbar.addSeparator()
         toolbar.addAction(self.rotate_cw_action)
         toolbar.addAction(self.rotate_ccw_action)
         toolbar.addAction(self.flip_h_action)
         toolbar.addAction(self.flip_v_action)
-        toolbar.addAction(self.rotate_arbitrary_left_action)
-        toolbar.addAction(self.rotate_arbitrary_right_action)
         toolbar.addAction(self.reload_action)
 
         toolbar.addSeparator()
+        toolbar.addAction(self.set_zoom_focus_action)
         toolbar.addAction(self.zoom_in_action)
         toolbar.addAction(self.zoom_out_action)
         toolbar.addAction(self.fit_to_window_action)
@@ -235,6 +235,16 @@ class MainWindow(QMainWindow):
 
         self.status_bar.addPermanentWidget(self.size_label)
         self.status_bar.addPermanentWidget(self.zoom_label)
+
+        toolbar2 = QToolBar("Left Panel")
+        toolbar2.setOrientation(Qt.Vertical)
+        self.addToolBar(Qt.LeftToolBarArea, toolbar2)
+        self.menuBar().addAction(toolbar2.toggleViewAction())
+
+        toolbar2.addAction(self.rotate_arbitrary_left_action)
+        toolbar2.addAction(self.rotate_arbitrary_right_action)
+        toolbar2.addAction(self.exposure_down_action)
+        toolbar2.addAction(self.exposure_up_action)
 
     def load_file_from_args(self):
         """Load file passed as command-line argument."""
@@ -299,29 +309,12 @@ class MainWindow(QMainWindow):
             self.status_bar.showMessage(f"No {direction} image")
 
     def next_image(self):
+        self.view.set_tool_mode(ToolMode.NONE)
         self._navigate_image("next")
 
     def previous_image(self):
+        self.view.set_tool_mode(ToolMode.NONE)
         self._navigate_image("previous")
-
-    def _update_undo_redo(self):
-        """Update Undo/Redo action availability based on model state."""
-        self.undo_action.setEnabled(self.image_model.can_undo())
-        self.redo_action.setEnabled(self.image_model.can_redo())
-
-    def undo(self):
-        if self.image_model.can_undo():
-            self.image_model.undo()
-            self.view.clear_selection()
-            self.display_image()
-            self._update_undo_redo()
-
-    def redo(self):
-        if self.image_model.can_redo():
-            self.image_model.redo()
-            self.view.clear_selection()
-            self.display_image()
-            self._update_undo_redo()
 
     def _update_status_info(self):
         """Update status bar with current file number and total count."""
@@ -342,80 +335,76 @@ class MainWindow(QMainWindow):
     def paste_image(self):
         if self.image_model.load_from_clipboard():
             self.display_image()
-            self._update_undo_redo()
             self.status_bar.showMessage("Pasted image from clipboard")
 
     def display_image(self):
         self.scene.clear()
-        if self.image_model.current_pixmap:
-            pixmap_item = QGraphicsPixmapItem(self.image_model.current_pixmap)
-            self.scene.addItem(pixmap_item)
-            self.view.setSceneRect(self.scene.itemsBoundingRect())
-
-            # Update status-bar
-            size = self.image_model.current_pixmap.size()
-            self.size_label.setText(f"Original Size: {size.width()}×{size.height()}")
-
-            # Update file navigation info
-            self._update_status_info()
-
-            # Fit in view only if image is larger than window
-            self.view.fit_to_view()
+        self.view.set_pixmap(self.image_model.current_pixmap)
 
     def rotate_cw(self):
+        self.view.set_tool_mode(ToolMode.NONE)
         self.image_model.rotate_90_clockwise()
-        self.view.clear_selection()
         self.display_image()
 
     def rotate_ccw(self):
+        self.view.set_tool_mode(ToolMode.NONE)
         self.image_model.rotate_90_counterclockwise()
-        self.view.clear_selection()
         self.display_image()
 
     def _rotate_by(self, delta):
+        self.view.set_tool_mode(ToolMode.NONE)
         self.image_model.rotate_arbitrary(delta)
-        self.view.clear_selection()
         self.display_image()
         self.status_bar.showMessage(f"Rotation: {self.image_model.rotation_angle:.1f}°")
 
     def flip_horizontal(self):
         """Flip image horizontally."""
+        self.view.set_tool_mode(ToolMode.NONE)
         self.image_model.flip_horizontal()
-        self.view.clear_selection()
         self.display_image()
 
     def flip_vertical(self):
         """Flip image vertically."""
+        self.view.set_tool_mode(ToolMode.NONE)
         self.image_model.flip_vertical()
-        self.view.clear_selection()
         self.display_image()
+
+    def set_zoom_focus_mode(self):
+        self.view.set_tool_mode(ToolMode.ZOOM_FOCUS)
+
+    def toggle_wb_mode(self):
+        self.view.set_tool_mode(ToolMode.WHITE_BALANCE)
+
+    def apply_white_balance(self, x: int, y: int):
+        self.image_model.apply_white_balance_from_point(x, y)
+        self.display_image()
+        self.status_bar.showMessage("White balance applied")
+
+    def _adjust_exposure(self, delta_ev: float):
+        self.view.set_tool_mode(ToolMode.NONE)
+        if not self.image_model.original_pixmap:
+            return
+        self.image_model.adjust_exposure(delta_ev)
+        self.display_image()
+        total_ev = self.image_model.get_total_exposure_ev()
+        self.status_bar.showMessage(f"Exposure: {total_ev:+.1f} EV")
 
     def crop_image(self):
+        if not self.image_model.current_pixmap:
+            self.status_bar.showMessage("No image to crop")
+            return
+        self.view.set_tool_mode(ToolMode.CROP)
+
+    def finalize_crop(self):
         if not self.image_model.current_pixmap or not self.view.crop_area.is_active:
             return
-
         rect = self.view.crop_area.rect
         cropped = self.image_model.current_pixmap.copy(rect)
-
         self.image_model.apply_to_current(cropped)
-
-        # NEW: Copy cropped image to clipboard automatically
         self.clipboard_model.copy_image(cropped)
         self.status_bar.showMessage("Cropped image copied to clipboard")
-
-        self.view.clear_selection()
-
-        # Reset crop area
         self.view.crop_area.reset()
-
-        # Remove rubber band safely
-        if self.view._rubber_band:
-            self.scene.removeItem(self.view._rubber_band)
-            self.view._rubber_band = None
-
-        # Re-display the image
         self.display_image()
-        self._update_undo_redo()
 
     def copy_image(self):
         """Copy current image or selected area to clipboard."""
@@ -426,9 +415,21 @@ class MainWindow(QMainWindow):
             cropped = self.image_model.current_pixmap.copy(self.view.crop_area.rect)
             self.clipboard_model.copy_image(cropped)
             self.status_bar.showMessage("Selected area copied to clipboard")
+            return
+
+        self.view.set_tool_mode(ToolMode.COPY_AREA)
+
+    def copy_selected_area(self):
+        """Called from ImageView after Enter in COPY_AREA mode."""
+        if self.view.crop_area.is_active and not self.view.crop_area.rect.isNull():
+            cropped = self.image_model.current_pixmap.copy(self.view.crop_area.rect)
+            self.clipboard_model.copy_image(cropped)
+            self.status_bar.showMessage("Selected area copied to clipboard")
         else:
+            # Fallback: copy full image
             self.clipboard_model.copy_image(self.image_model.current_pixmap)
-            self.status_bar.showMessage("Image copied to clipboard")
+            self.status_bar.showMessage("Full image copied to clipboard")
+        self.view.set_tool_mode(ToolMode.NONE)
 
     def show_exif(self):
         """Show EXIF data in a separate dialog."""
@@ -489,6 +490,17 @@ class MainWindow(QMainWindow):
                 success = self.image_model.save(path, "PNG")
 
             if success:
+                saved_dir = os.path.dirname(path)
+                if (self.navigator_model.current_directory and
+                        os.path.samefile(saved_dir, self.navigator_model.current_directory)):
+                    # Update file list
+                    self.navigator_model.image_paths = self.navigator_model._get_image_paths_in_directory(saved_dir)
+                    # Update index of current file
+                    try:
+                        new_index = self.navigator_model.image_paths.index(path)
+                        self.navigator_model.current_file_index = new_index
+                    except ValueError:
+                        pass
                 if path == self.image_model.path:
                     self.image_model.path = path
                 self.status_bar.showMessage(f"Saved: {path}")
@@ -497,6 +509,7 @@ class MainWindow(QMainWindow):
 
     def resize_image(self):
         """Resize image with aspect ratio preservation."""
+        self.view.set_tool_mode(ToolMode.NONE)
         if not self.image_model.current_pixmap:
             return
 
@@ -515,6 +528,7 @@ class MainWindow(QMainWindow):
 
     def delete_current_file(self):
         """Move current file to trash."""
+        self.view.set_tool_mode(ToolMode.NONE)
         if not self.image_model.path:
             self.status_bar.showMessage("No file to delete")
             return
@@ -552,6 +566,7 @@ class MainWindow(QMainWindow):
 
     def show_help(self):
         """Show the About dialog."""
+        self.view.set_tool_mode(ToolMode.NONE)
         from about_dialog import AboutDialog
         dialog = AboutDialog(self)
         dialog.exec() # exec() modal one, show() - not modal

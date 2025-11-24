@@ -29,5 +29,9 @@
         <file>undo.svg</file>
         <file>left-up.svg</file>
         <file>right-up.svg</file>
+        <file>wb.svg</file>
+        <file>sun-up.svg</file>
+        <file>sun-down.svg</file>
+        <file>target.svg</file>
     </qresource>
 </RCC>
