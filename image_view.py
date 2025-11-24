@@ -6,12 +6,16 @@ from enum import Enum
 from models import CropArea
 from constants import WB_MIN_DIVISOR, WB_MAX_HALF_SIZE
 
+# Zoom in/out factors
+ZOOM_STEP = 1.2
+ZOOM_IN_FACTOR = ZOOM_STEP
+ZOOM_OUT_FACTOR = 1.0 / ZOOM_STEP
+
 class ToolMode(Enum):
     NONE = 0
     WHITE_BALANCE = 1
     CROP = 2
-    ZOOM_FOCUS = 3
-    COPY_AREA = 4
+    COPY_AREA = 3
 
 class ImageView(QGraphicsView):
     """
@@ -27,7 +31,6 @@ class ImageView(QGraphicsView):
         self._pan_start_pos = None
         self._click_timer = None
         self._tool_mode = ToolMode.NONE
-        self.zoom_focus_point = None
 
         # --- Magnifier for WB mode ---
         self.magnifier = QLabel(self)
@@ -71,16 +74,11 @@ class ImageView(QGraphicsView):
             if hasattr(self.parent(), 'status_bar'):
                 self.parent().status_bar.showMessage("Select area and press Enter to copy...")
 
-        elif mode == ToolMode.ZOOM_FOCUS:
-            self.setCursor(Qt.CrossCursor)
-            self.setMouseTracking(False)
-            self.zoom_focus_point = None
-            if hasattr(self.parent(), 'status_bar'):
-                self.parent().status_bar.showMessage("Click to set zoom focus...")
-
         elif mode == ToolMode.NONE:
             self.setCursor(Qt.ArrowCursor)
             self._clear_selection()
+            if hasattr(self.parent(), 'status_bar'):
+                self.parent().status_bar.showMessage("Ready")
 
         else:
             # fallback
@@ -106,14 +104,6 @@ class ImageView(QGraphicsView):
                 self.parent().size_label.setText("Size:-")
 
     def mousePressEvent(self, event):
-        if self._tool_mode == ToolMode.ZOOM_FOCUS and event.button() == Qt.LeftButton:
-            scene_pos = self.mapToScene(event.pos())
-            self.zoom_focus_point = scene_pos
-            self.set_tool_mode(ToolMode.NONE)  # выход из режима после выбора
-            if hasattr(self.parent(), 'status_bar'):
-                self.parent().status_bar.showMessage(f"Zoom focus set to ({int(scene_pos.x())}, {int(scene_pos.y())})")
-            event.accept()
-            return
         if self._tool_mode == ToolMode.WHITE_BALANCE and event.button() == Qt.LeftButton:
             pos = self.mapToScene(event.pos()).toPoint()
             pixmap = self.parent().image_model.current_pixmap
@@ -274,32 +264,21 @@ class ImageView(QGraphicsView):
         super().mouseReleaseEvent(event)
 
     def keyPressEvent(self, event):
-        if self._tool_mode == ToolMode.CROP:
-            if event.key() in (Qt.Key_Enter, Qt.Key_Return):
-                self._apply_crop()
-                event.accept()
-                return
-            elif event.key() == Qt.Key_Escape:
-                self._exit_crop_mode()
-                event.accept()
-                return
-
-        elif self._tool_mode == ToolMode.COPY_AREA:
-            if event.key() in (Qt.Key_Enter, Qt.Key_Return):
-                self._apply_copy_area()
-                event.accept()
-                return
-            elif event.key() == Qt.Key_Escape:
-                self._exit_copy_area_mode()
-                event.accept()
-                return
-
         if event.key() == Qt.Key_Escape:
             # Global Esc
-            self.zoom_focus_point = None
             self.set_tool_mode(ToolMode.NONE)
             if hasattr(self.parent(), 'status_bar'):
                 self.parent().status_bar.showMessage("Operation cancelled")
+            event.accept()
+            return
+
+        if self._tool_mode == ToolMode.CROP and event.key() in (Qt.Key_Enter, Qt.Key_Return):
+            self._apply_crop()
+            event.accept()
+            return
+
+        if self._tool_mode == ToolMode.COPY_AREA and event.key() in (Qt.Key_Enter, Qt.Key_Return):
+            self._apply_copy_area()
             event.accept()
             return
 
@@ -322,7 +301,7 @@ class ImageView(QGraphicsView):
         print(f"crop_area.is_active: {self.crop_area.is_active}")
         print(f"rect: {self.crop_area.rect}, isNull: {self.crop_area.rect.isNull()}")
         if not self.crop_area.is_active or self.crop_area.rect.isNull():
-            self._exit_crop_mode()
+            self.view.set_tool_mode(ToolMode.CROP)
             return
         if hasattr(self.parent(), 'finalize_crop'):
             self.parent().finalize_crop()
@@ -330,32 +309,11 @@ class ImageView(QGraphicsView):
 
     def _apply_copy_area(self):
         if not self.crop_area.is_active or self.crop_area.rect.isNull():
-            self._exit_copy_area_mode()
+            self.view.set_tool_mode(ToolMode.COPY_AREA)
             return
         if hasattr(self.parent(), 'copy_selected_area'):
             self.parent().copy_selected_area()
         self.set_tool_mode(ToolMode.NONE)
-
-    def _exit_copy_area_mode(self):
-        self.setCursor(Qt.ArrowCursor)
-        self._clear_selection()
-        if hasattr(self.parent(), 'status_bar'):
-            self.parent().status_bar.showMessage("Copy selection cancelled")
-        self.set_tool_mode(ToolMode.NONE)
-
-    def _exit_crop_mode(self):
-        self.setCursor(Qt.ArrowCursor)
-        self._clear_selection()
-        if hasattr(self.parent(), 'status_bar'):
-            self.parent().status_bar.showMessage("Crop cancelled")
-
-    def wheelEvent(self, event):
-        """Zoom in/out with mouse wheel."""
-        if event.angleDelta().y() > 0:
-            self.zoom_out()
-        else:
-            self.zoom_in()
-        event.accept()
 
     def fit_to_view(self):
         """Fit image to view only if image is larger than view."""
@@ -378,25 +336,64 @@ class ImageView(QGraphicsView):
 
         self.update_zoom_display()
 
+    def wheelEvent(self, event):
+        cursor_pos = event.position().toPoint()
+        factor = ZOOM_OUT_FACTOR if event.angleDelta().y() > 0 else ZOOM_IN_FACTOR
+        self._zoom_at_point(cursor_pos, factor)
+        event.accept()
+
     def zoom_in(self):
-        self._perform_zoom(1.25)
+        cursor_pos = self.mapFromGlobal(QCursor.pos())
+        viewport_rect = self.viewport().rect()
+        if viewport_rect.contains(cursor_pos):
+            self._zoom_at_point(cursor_pos, ZOOM_IN_FACTOR)
+        else:
+            self._perform_zoom_simple(ZOOM_IN_FACTOR)
 
     def zoom_out(self):
-        self._perform_zoom(0.8)
+        cursor_pos = self.mapFromGlobal(QCursor.pos())
+        viewport_rect = self.viewport().rect()
+        if viewport_rect.contains(cursor_pos):
+            self._zoom_at_point(cursor_pos, ZOOM_OUT_FACTOR)
+        else:
+            self._perform_zoom_simple(ZOOM_OUT_FACTOR)
 
-    def _perform_zoom(self, factor):
-        self.set_tool_mode(ToolMode.NONE)  # выход из любых режимов
+    def _zoom_at_point(self, cursor_pos, factor):
+        """Zoom with cursor 'sticking' to the same image point."""
+        self.set_tool_mode(ToolMode.NONE)
+        if not self.scene() or self.scene().itemsBoundingRect().isNull():
+            return
+
+        scene_pos_before = self.mapToScene(cursor_pos)
         self.scale(factor, factor)
+        scene_pos_after = self.mapToScene(cursor_pos)
+        delta = scene_pos_after - scene_pos_before
+        current_center = self.mapToScene(self.viewport().rect().center())
+        self.centerOn(current_center - delta)
+        self.update_zoom_display()
 
-        # Центрируем на zoom_focus_point, если задана, иначе — на центр сцены
-        target = self.zoom_focus_point if self.zoom_focus_point else self.scene().itemsBoundingRect().center()
-        self.centerOn(target)
-
+    def _perform_zoom_simple(self, factor):
+        """Fallback zoom when cursor is outside view (e.g. via keyboard focus without mouse)."""
+        self.set_tool_mode(ToolMode.NONE)
+        if not self.scene() or self.scene().itemsBoundingRect().isNull():
+            return
+        self.scale(factor, factor)
+        self.centerOn(self.scene().itemsBoundingRect().center())
         self.update_zoom_display()
 
     def reset_zoom(self):
+        if not self.scene() or self.scene().itemsBoundingRect().isNull():
+            return
+
+        cursor_pos = self.mapFromGlobal(QCursor.pos())
+        viewport_rect = self.viewport().rect()
+
+        if viewport_rect.contains(cursor_pos):
+            target = self.mapToScene(cursor_pos)
+        else:
+            target = self.scene().itemsBoundingRect().center()
+
         self.resetTransform()
-        target = self.zoom_focus_point if self.zoom_focus_point else self.scene().itemsBoundingRect().center()
         self.centerOn(target)
         self.update_zoom_display()
 

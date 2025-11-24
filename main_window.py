@@ -146,10 +146,6 @@ class MainWindow(QMainWindow):
         self.exposure_down_action = QAction(QIcon(":/icons/sun-down.svg"), "-0.1 EV", self)
         self.exposure_down_action.triggered.connect(lambda: self._adjust_exposure(-0.1))
 
-        self.set_zoom_focus_action = QAction(QIcon(":/icons/target.svg"), "Set Zoom Focus", self)
-        self.set_zoom_focus_action.setShortcut("Z")
-        self.set_zoom_focus_action.triggered.connect(self.set_zoom_focus_mode)
-
         # Menus
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu("File")
@@ -213,7 +209,6 @@ class MainWindow(QMainWindow):
         toolbar.addAction(self.reload_action)
 
         toolbar.addSeparator()
-        toolbar.addAction(self.set_zoom_focus_action)
         toolbar.addAction(self.zoom_in_action)
         toolbar.addAction(self.zoom_out_action)
         toolbar.addAction(self.fit_to_window_action)
@@ -368,9 +363,6 @@ class MainWindow(QMainWindow):
         self.view.set_tool_mode(ToolMode.NONE)
         self.image_model.flip_vertical()
         self.display_image()
-
-    def set_zoom_focus_mode(self):
-        self.view.set_tool_mode(ToolMode.ZOOM_FOCUS)
 
     def toggle_wb_mode(self):
         self.view.set_tool_mode(ToolMode.WHITE_BALANCE)

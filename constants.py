@@ -1,2 +1,6 @@
 WB_MAX_HALF_SIZE = 11
 WB_MIN_DIVISOR = 200
+
+# Zoom in/out factors
+ZOOM_IN_FACTOR = 1.25
+ZOOM_OUT_FACTOR = 0.8
