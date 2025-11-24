@@ -135,28 +135,29 @@ class ImageModel:
 
     def apply_white_balance_from_point(self, x: int, y: int):
         """
-        Apply white balance correction so that the given (r, g, b) becomes neutral.
-        The green channel is used as reference.
+        Apply white balance correction so that the sampled neutral point becomes gray.
+        Uses green channel as reference. Gains are clamped to prevent extreme shifts.
+        Window size is adaptive based on image dimensions using WB_MAX_HALF_SIZE and WB_MIN_DIVISOR.
         """
         if not self.current_pixmap:
             return
-
         qimage = self.current_pixmap.toImage()
         if not qimage.valid(x, y):
             return
 
+        # Adaptive window size based on image resolution
         w, h = qimage.width(), qimage.height()
         min_dim = min(w, h)
-        window = min(WB_MAX_HALF_SIZE, max(1, min_dim // WB_MIN_DIVISOR))
+        max_window_by_size = max(1, min_dim // WB_MIN_DIVISOR)
+        half_window = min(WB_MAX_HALF_SIZE, max_window_by_size)
 
         total_r = total_g = total_b = 0
         count = 0
-        for dx in range(-window, window + 1):
-            for dy in range(-window, window + 1):
+        for dx in range(-half_window, half_window + 1):
+            for dy in range(-half_window, half_window + 1):
                 nx, ny = x + dx, y + dy
-                if 0 <= nx < qimage.width() and 0 <= ny < qimage.height():
+                if 0 <= nx < w and 0 <= ny < h:
                     pixel = qimage.pixel(nx, ny)
-                    # Извлекаем компоненты (без создания QColor для скорости)
                     b_val = pixel & 0xFF
                     g_val = (pixel >> 8) & 0xFF
                     r_val = (pixel >> 16) & 0xFF
@@ -165,27 +166,26 @@ class ImageModel:
                     total_b += b_val
                     count += 1
 
-        if count == 0:
+        if count == 0 or total_g == 0:
             return
 
         r = total_r / count
         g = total_g / count
         b = total_b / count
 
-        if g == 0:
+        if r == 0 or b == 0:
             return
 
-        # Avoid division by zero
-        gain_r = g / r if r != 0 else 1.0
-        gain_b = g / b if b != 0 else 1.0
+        # Compute gains using green as reference
+        gain_r = g / r
+        gain_b = g / b
 
+        # Clamp gains to avoid extreme color shifts
+        gain_r = max(0.25, min(4.0, gain_r))
+        gain_b = max(0.25, min(4.0, gain_b))
 
-        # Convert to PIL
-        qimage = self.current_pixmap.toImage()
-
+        # Apply gains using Pillow
         img = Image.fromqimage(qimage)
-
-        # Apply gains per channel
         if img.mode == "RGB":
             r_band, g_band, b_band = img.split()
             r_band = r_band.point(lambda x: min(255, int(x * gain_r)))
@@ -197,22 +197,22 @@ class ImageModel:
             b_band = b_band.point(lambda x: min(255, int(x * gain_b)))
             corrected = Image.merge("RGBA", (r_band, g_band, b_band, a_band))
         else:
-            # Convert unsupported modes to RGB
+            # Fallback: convert to RGB
             img = img.convert("RGB")
             r_band, g_band, b_band = img.split()
             r_band = r_band.point(lambda x: min(255, int(x * gain_r)))
             b_band = b_band.point(lambda x: min(255, int(x * gain_b)))
             corrected = Image.merge("RGB", (r_band, g_band, b_band))
 
-        # Convert back to QPixmap
+        # Update model state
         qimage_out = corrected.toqimage()
         self.current_pixmap = QPixmap.fromImage(qimage_out)
         self.size = self.current_pixmap.size()
-
-        # Reset rotation context (optional but clean)
+        # Treat corrected image as new base for further edits
         if self.original_pixmap is not None:
             self.original_pixmap = self.current_pixmap.copy()
             self.rotation_angle = 0.0
+
 
     def adjust_exposure(self, delta_ev: float):
         """Apply exposure change relative to original image."""

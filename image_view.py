@@ -320,7 +320,7 @@ class ImageView(QGraphicsView):
 
     def wheelEvent(self, event):
         cursor_pos = event.position().toPoint()
-        factor = ZOOM_OUT_FACTOR if event.angleDelta().y() > 0 else ZOOM_IN_FACTOR
+        factor = ZOOM_IN_FACTOR if event.angleDelta().y() > 0 else ZOOM_OUT_FACTOR
         self._zoom_at_point(cursor_pos, factor)
         event.accept()
 
