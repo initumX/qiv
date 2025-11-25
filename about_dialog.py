@@ -39,7 +39,7 @@ class AboutDialog(QDialog):
         <ul>
             <li>View photo/screenshots: JPG/JPEG, WebP, PNG</li>
             <li>Basic editing: Rotate, flip, crop, copy/paste, resize</li>
-            <li>White balance: experimental feature</li>
+            <li>White balance feature</li>
             <li>Saving with quality control</li>
             <li>Zoom in/out, fit to window, original size</li>
             <li>Handy panning with arrows or middle mouse button</li>
@@ -49,7 +49,7 @@ class AboutDialog(QDialog):
         </ul>
         
         <h4>Version:</h4>
-        <p>0.0.3</p>
+        <p>0.0.4</p>
 
         <h4>Author:</h4>
         <p>initum.x</p>
