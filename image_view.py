@@ -53,6 +53,7 @@ class ImageView(QGraphicsView):
         if mode == ToolMode.WHITE_BALANCE:
             self.setCursor(Qt.CrossCursor)
             self.setMouseTracking(True)
+            self.fit_to_view()
             self.setFocus()
             default_msg = "Click on a neutral gray area to apply white balance..."
 
@@ -299,6 +300,9 @@ class ImageView(QGraphicsView):
 
     def fit_to_view(self):
         """Fit image to view only if image is larger than view."""
+        if hasattr(self.parent(), 'view_state'):
+            self.parent().view_state.auto_fit_enabled = True
+        self._auto_fit_limited()
         if not self.scene() or self.scene().itemsBoundingRect().isNull():
             return
 
@@ -315,6 +319,38 @@ class ImageView(QGraphicsView):
             # Image is smaller, center it without scaling
             self.resetTransform()  # Reset any existing scaling
             self.centerOn(image_rect.center())
+            if hasattr(self.parent(), 'view_state'):
+                self.parent().view_state.auto_fit_enabled = True
+
+        self.update_zoom_display()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if (hasattr(self.parent(), 'view_state') and
+                self.parent().view_state.auto_fit_enabled):
+            self._auto_fit_limited()
+
+    def _auto_fit_limited(self):
+        """Fit to view only if image > viewport, otherwise show at 100%."""
+        if not self.scene() or self.scene().itemsBoundingRect().isNull():
+            return
+
+        image_rect = self.scene().itemsBoundingRect()
+        view_rect = self.viewport().rect()
+
+        # Calculate scale needed to fit image in view
+        sx = view_rect.width() / image_rect.width()
+        sy = view_rect.height() / image_rect.height()
+        scale = min(sx, sy)
+
+        # Never scale above 100%
+        if scale >= 1.0:
+            # Show at original size, centered
+            self.resetTransform()
+            self.centerOn(image_rect.center())
+        else:
+            # Fit to view
+            self.fitInView(image_rect, Qt.KeepAspectRatio)
 
         self.update_zoom_display()
 
@@ -342,6 +378,9 @@ class ImageView(QGraphicsView):
 
     def _zoom_at_point(self, cursor_pos, factor):
         """Zoom with cursor 'sticking' to the same image point."""
+        if hasattr(self.parent(), 'view_state'):
+            self.parent().view_state.auto_fit_enabled = False
+
         self.set_tool_mode(ToolMode.NONE, "")
         if not self.scene() or self.scene().itemsBoundingRect().isNull():
             return
@@ -356,6 +395,9 @@ class ImageView(QGraphicsView):
 
     def _perform_zoom_simple(self, factor):
         """Fallback zoom when cursor is outside view (e.g. via keyboard focus without mouse)."""
+        if hasattr(self.parent(), 'view_state'):
+            self.parent().view_state.auto_fit_enabled = False
+
         self.set_tool_mode(ToolMode.NONE, "")
         if not self.scene() or self.scene().itemsBoundingRect().isNull():
             return
@@ -364,6 +406,9 @@ class ImageView(QGraphicsView):
         self.update_zoom_display()
 
     def reset_zoom(self):
+        if hasattr(self.parent(), 'view_state'):
+            self.parent().view_state.auto_fit_enabled = False
+
         if not self.scene() or self.scene().itemsBoundingRect().isNull():
             return
 

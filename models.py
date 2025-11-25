@@ -355,6 +355,7 @@ class ViewState:
         self.zoom_factor: float = 1.0
         self.offset: QPointF = QPointF(0, 0)
         self.fit_to_window: bool = True
+        self.auto_fit_enabled: bool = True
 
     def reset_zoom(self):
         self.zoom_factor = 1.0
