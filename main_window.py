@@ -63,18 +63,6 @@ class MainWindow(QMainWindow):
         self.rotate_ccw_action.setShortcut("L")
         self.rotate_ccw_action.triggered.connect(lambda: self._safe_call(self.rotate_ccw))
 
-        self.rotate_arbitrary_left_action = QAction(QIcon(":/icons/left-up.svg"), "Rotate Right 0,5°", self)
-        self.rotate_arbitrary_left_action.setShortcut("Ctrl+1")
-        self.rotate_arbitrary_left_action.triggered.connect(
-            lambda: self._safe_call(lambda: self._rotate_by(0.2))
-        )
-
-        self.rotate_arbitrary_right_action = QAction(QIcon(":/icons/right-up.svg"), "Rotate Left 0,5°", self)
-        self.rotate_arbitrary_right_action.setShortcut("Ctrl+3")
-        self.rotate_arbitrary_right_action.triggered.connect(
-            lambda: self._safe_call(lambda: self._rotate_by(-0.2))
-        )
-
         self.flip_h_action = QAction(QIcon(":/icons/flip-h.svg"), "Flip Horizontal", self)
         self.flip_h_action.setShortcut("H")
         self.flip_h_action.triggered.connect(lambda: self._safe_call(self.flip_horizontal))
@@ -144,16 +132,6 @@ class MainWindow(QMainWindow):
         self.wb_action = QAction(QIcon(":/icons/wb.svg"), "White Balance (Click Neutral)", self)
         self.wb_action.triggered.connect(lambda: self._safe_call(self.toggle_wb_mode))
 
-        self.exposure_up_action = QAction(QIcon(":/icons/sun-up.svg"), "+0.1 EV", self)
-        self.exposure_up_action.triggered.connect(
-            lambda: self._safe_call(lambda: self._adjust_exposure(+0.1))
-        )
-
-        self.exposure_down_action = QAction(QIcon(":/icons/sun-down.svg"), "-0.1 EV", self)
-        self.exposure_down_action.triggered.connect(
-            lambda: self._safe_call(lambda: self._adjust_exposure(-0.1))
-        )
-
         # Menus
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu("File")
@@ -210,6 +188,7 @@ class MainWindow(QMainWindow):
         toolbar.addAction(self.copy_action)
         toolbar.addAction(self.paste_action)
         toolbar.addAction(self.resize_action)
+        toolbar.addAction(self.wb_action)
 
         toolbar.addSeparator()
         toolbar.addAction(self.rotate_cw_action)
@@ -239,18 +218,6 @@ class MainWindow(QMainWindow):
 
         self.status_bar.addPermanentWidget(self.size_label)
         self.status_bar.addPermanentWidget(self.zoom_label)
-
-        toolbar2 = QToolBar("Left Panel")
-        toolbar2.setOrientation(Qt.Vertical)
-        self.addToolBar(Qt.LeftToolBarArea, toolbar2)
-        self.menuBar().addAction(toolbar2.toggleViewAction())
-
-        toolbar2.addAction(self.exposure_up_action)
-        toolbar2.addAction(self.exposure_down_action)
-        toolbar2.addAction(self.wb_action)
-
-        toolbar2.addAction(self.rotate_arbitrary_left_action)
-        toolbar2.addAction(self.rotate_arbitrary_right_action)
 
     def _safe_call(self, func, message="No image loaded"):
         if not self.image_model.current_pixmap or self.image_model.current_pixmap.isNull():
@@ -365,12 +332,6 @@ class MainWindow(QMainWindow):
         self.image_model.rotate_90_counterclockwise()
         self.display_image()
 
-    def _rotate_by(self, delta):
-        self.view.set_tool_mode(ToolMode.NONE, "")
-        self.image_model.rotate_arbitrary(delta)
-        self.display_image()
-        self.status_bar.showMessage(f"Rotation: {self.image_model.rotation_angle:.1f}°")
-
     def flip_horizontal(self):
         """Flip image horizontally."""
         self.view.set_tool_mode(ToolMode.NONE, "")
@@ -389,15 +350,6 @@ class MainWindow(QMainWindow):
     def apply_white_balance(self, x: int, y: int):
         self.image_model.apply_white_balance_from_point(x, y)
         self.display_image()
-
-    def _adjust_exposure(self, delta_ev: float):
-        self.view.set_tool_mode(ToolMode.NONE, "")
-        if not self.image_model.original_pixmap:
-            return
-        self.image_model.adjust_exposure(delta_ev)
-        self.display_image()
-        total_ev = self.image_model.get_total_exposure_ev()
-        self.status_bar.showMessage(f"Exposure: {total_ev:+.1f} EV")
 
     def crop_image(self):
         if not self.image_model.current_pixmap:

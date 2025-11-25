@@ -20,15 +20,12 @@ class ImageModel:
         self.original_pixmap: Optional[QPixmap] = None
         self.current_pixmap: Optional[QPixmap] = None
         self.size: Optional[QSize] = None
-        self.rotation_angle: float = 0.0
-        self.total_exposure_ev: float = 0.0
 
     def apply_to_current(self, new_pixmap: QPixmap):
         """Apply a new pixmap and save to history."""
         if new_pixmap and not new_pixmap.isNull():
             self.original_pixmap = new_pixmap.copy()
             self.current_pixmap = new_pixmap.copy()
-            self.rotation_angle = 0.0
             self.size = new_pixmap.size()
 
     def load_from_path(self, path: str) -> bool:
@@ -41,8 +38,6 @@ class ImageModel:
         self.original_pixmap = pixmap.copy()
         self.current_pixmap = pixmap
         self.size = pixmap.size()
-        self.rotation_angle = 0.0
-        self.total_exposure_ev = 0.0
         return True
 
     def reload_from_path(self) -> bool:
@@ -63,8 +58,6 @@ class ImageModel:
         self.current_pixmap = pixmap.copy()
         self.size = pixmap.size()
         self.path = None
-        self.rotation_angle = 0.0
-        self.total_exposure_ev = 0.0
         return True
 
     def rotate_90_clockwise(self):
@@ -72,14 +65,14 @@ class ImageModel:
             return
         transform = QTransform().rotate(90)
         self.current_pixmap = self.current_pixmap.transformed(transform, self._transform_mode())
-        self.rotation_angle = (self.rotation_angle + 90) % 360
+        self.size = self.current_pixmap.size()
 
     def rotate_90_counterclockwise(self):
         if not self.current_pixmap:
             return
         transform = QTransform().rotate(-90)
         self.current_pixmap = self.current_pixmap.transformed(transform, self._transform_mode())
-        self.rotation_angle = (self.rotation_angle - 90) % 360
+        self.size = self.current_pixmap.size()
 
     def flip_horizontal(self):
         """Flip current pixmap horizontally."""
@@ -103,14 +96,6 @@ class ImageModel:
             return
         qimage_resized = ResizeHelper.resize_pixmap(self.current_pixmap, width, height)
         self.current_pixmap = QPixmap.fromImage(qimage_resized)
-        self.size = self.current_pixmap.size()
-
-    def rotate_arbitrary(self, delta_angle: float):
-        if self.original_pixmap is None:
-            return
-        self.rotation_angle += delta_angle
-        transform = QTransform().rotate(self.rotation_angle)
-        self.current_pixmap = self.original_pixmap.transformed(transform, self._transform_mode())
         self.size = self.current_pixmap.size()
 
     def save(self, path: str, format: str = "JPEG", quality: int = 95):
@@ -211,41 +196,6 @@ class ImageModel:
         # Treat corrected image as new base for further edits
         if self.original_pixmap is not None:
             self.original_pixmap = self.current_pixmap.copy()
-            self.rotation_angle = 0.0
-
-
-    def adjust_exposure(self, delta_ev: float):
-        """Apply exposure change relative to original image."""
-        if self.original_pixmap is None:
-            return
-        self.total_exposure_ev += delta_ev
-        # Apply total exposure to ORIGINAL
-        gain = 2.0 ** self.total_exposure_ev
-        qimage = self.original_pixmap.toImage()
-        img = Image.fromqimage(qimage)
-        if img.mode not in ("RGB", "RGBA"):
-            img = img.convert("RGB")
-        bands = img.split()
-        if img.mode == "RGB":
-            r, g, b = bands
-            r = r.point(lambda x: min(255, int(x * gain)))
-            g = g.point(lambda x: min(255, int(x * gain)))
-            b = b.point(lambda x: min(255, int(x * gain)))
-            corrected = Image.merge("RGB", (r, g, b))
-        else:  # RGBA
-            r, g, b, a = bands
-            r = r.point(lambda x: min(255, int(x * gain)))
-            g = g.point(lambda x: min(255, int(x * gain)))
-            b = b.point(lambda x: min(255, int(x * gain)))
-            corrected = Image.merge("RGBA", (r, g, b, a))
-        qimage_out = corrected.toqimage()
-        self.current_pixmap = QPixmap.fromImage(qimage_out)
-        self.size = self.current_pixmap.size()
-        # Keep rotation context clean
-        self.rotation_angle = 0.0
-
-    def get_total_exposure_ev(self) -> float:
-        return self.total_exposure_ev
 
     def _transform_mode(self):
         from PySide6.QtCore import Qt

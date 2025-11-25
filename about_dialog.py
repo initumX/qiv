@@ -39,7 +39,7 @@ class AboutDialog(QDialog):
         <ul>
             <li>View photo/screenshots: JPG/JPEG, WebP, PNG</li>
             <li>Basic editing: Rotate, flip, crop, copy/paste, resize</li>
-            <li>White balance and exposition: experimental features</li>
+            <li>White balance: experimental feature</li>
             <li>Saving with quality control</li>
             <li>Zoom in/out, fit to window, original size</li>
             <li>Handy panning with arrows or middle mouse button</li>
