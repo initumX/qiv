@@ -123,6 +123,10 @@ class MainWindow(QMainWindow):
         self.fit_to_window_action.setShortcut("W")
         self.fit_to_window_action.triggered.connect(lambda: self._safe_call(self.view.fit_to_view))
 
+        self.loupe_action = QAction(QIcon(":/icons/loupe.svg"), "Loupe (1:1 Preview)", self)
+        self.loupe_action.setShortcut("Ctrl+L")
+        self.loupe_action.triggered.connect(lambda: self._safe_call(self.toggle_loupe_mode))
+
         # Navigation actions
         self.next_action = QAction(QIcon(":/icons/arrow-right.svg"), "Next Image", self)
         self.next_action.setShortcut("N")
@@ -210,6 +214,7 @@ class MainWindow(QMainWindow):
         toolbar.addAction(self.flip_v_action)
         toolbar.addSeparator()
         # Zoom
+        toolbar.addAction(self.loupe_action)
         toolbar.addAction(self.zoom_in_action)
         toolbar.addAction(self.zoom_out_action)
         toolbar.addAction(self.fit_to_window_action)
@@ -329,27 +334,30 @@ class MainWindow(QMainWindow):
         self.view.set_pixmap(self.image_model.current_pixmap)
 
     def rotate_cw(self):
-        self.view.set_tool_mode(ToolMode.NONE, "")
+        self.view.set_tool_mode(ToolMode.NONE)
         self.image_model.rotate_90_clockwise()
         self.display_image()
 
     def rotate_ccw(self):
-        self.view.set_tool_mode(ToolMode.NONE, "")
+        self.view.set_tool_mode(ToolMode.NONE)
         self.image_model.rotate_90_counterclockwise()
         self.display_image()
 
     def flip_horizontal(self):
-        self.view.set_tool_mode(ToolMode.NONE, "")
+        self.view.set_tool_mode(ToolMode.NONE)
         self.image_model.flip_horizontal()
         self.display_image()
 
     def flip_vertical(self):
-        self.view.set_tool_mode(ToolMode.NONE, "")
+        self.view.set_tool_mode(ToolMode.NONE)
         self.image_model.flip_vertical()
         self.display_image()
 
     def toggle_wb_mode(self):
         self.view.set_tool_mode(ToolMode.WHITE_BALANCE)
+
+    def toggle_loupe_mode(self):
+        self.view.set_tool_mode(ToolMode.LOUPE)
 
     def apply_white_balance(self, x: int, y: int):
         self.image_model.apply_white_balance_from_point(x, y)
@@ -447,7 +455,7 @@ class MainWindow(QMainWindow):
             self.status_bar.showMessage(f"Failed to save: {path}")
 
     def resize_image(self):
-        self.view.set_tool_mode(ToolMode.NONE, "")
+        self.view.set_tool_mode(ToolMode.NONE)
         if not self.image_model.current_pixmap:
             return
         w, h = ResizeHelper.resize_with_aspect_ratio(
@@ -458,12 +466,11 @@ class MainWindow(QMainWindow):
         )
         if w is not None and h is not None:
             self.image_model.resize(w, h)
-            self.view.clear_selection()
             self.display_image()
             self.status_bar.showMessage(f"Resized to {w}×{h}")
 
     def delete_current_file(self):
-        self.view.set_tool_mode(ToolMode.NONE, "")
+        self.view.set_tool_mode(ToolMode.NONE)
         if not self.image_model.path:
             self.status_bar.showMessage("No file to delete")
             return
@@ -496,7 +503,7 @@ class MainWindow(QMainWindow):
                 self.status_bar.showMessage("Failed to move file to trash")
 
     def show_help(self):
-        self.view.set_tool_mode(ToolMode.NONE, "")
+        self.view.set_tool_mode(ToolMode.NONE)
         from about_dialog import AboutDialog
         dialog = AboutDialog(self)
         dialog.exec()

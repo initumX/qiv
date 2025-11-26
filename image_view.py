@@ -4,7 +4,7 @@ from PySide6.QtCore import Qt, QRectF, QPoint
 from typing import Optional
 from enum import Enum
 from models import CropArea
-from constants import WB_MIN_DIVISOR, WB_MAX_HALF_SIZE
+from constants import WB_MIN_DIVISOR, WB_MAX_HALF_SIZE, LOUPE_SIZES
 
 # Zoom in/out factors
 ZOOM_STEP = 1.2
@@ -15,6 +15,7 @@ class ToolMode(Enum):
     NONE = 0
     WHITE_BALANCE = 1
     CROP = 2
+    LOUPE = 3
 
 class ImageView(QGraphicsView):
     """
@@ -28,7 +29,6 @@ class ImageView(QGraphicsView):
         self.crop_area = CropArea()
         self._panning = False
         self._pan_start_pos = None
-        self._click_timer = None
         self._tool_mode = ToolMode.NONE
 
         # --- Magnifier for WB mode ---
@@ -37,7 +37,13 @@ class ImageView(QGraphicsView):
         self.magnifier.setAttribute(Qt.WA_TranslucentBackground)
         self.magnifier.setFixedSize(138, 138)
         self.magnifier.hide()
-        self.magnifier_half_size = 11
+
+        # --- Loupe for 1:1 preview ---
+        self.loupe = QLabel(self)
+        self.loupe.setWindowFlags(Qt.ToolTip | Qt.FramelessWindowHint)
+        self.loupe.setAttribute(Qt.WA_TranslucentBackground)
+        self.loupe.hide()
+        self._loupe_size_index = 0
 
     def set_tool_mode(self, mode: ToolMode, message: Optional[str] = None):
         # --- Exit current mode ---
@@ -46,6 +52,9 @@ class ImageView(QGraphicsView):
             self.setMouseTracking(False)
         elif self._tool_mode == ToolMode.CROP:
             self._clear_selection()
+        elif self._tool_mode == ToolMode.LOUPE:
+            self.loupe.hide()
+            self.setMouseTracking(False)
 
         self._tool_mode = mode
 
@@ -57,6 +66,16 @@ class ImageView(QGraphicsView):
             self.setFocus()
             default_msg = "Click on a neutral gray area to apply white balance..."
 
+
+        elif mode == ToolMode.LOUPE:
+            self.setCursor(Qt.CrossCursor)
+            self.setMouseTracking(True)
+            self._loupe_size_index = 0
+            self.loupe.show()
+            self.setFocus()
+            size = LOUPE_SIZES[self._loupe_size_index]
+            default_msg = f"Loupe: {size}×{size} (click to cycle size)"
+
         elif mode == ToolMode.CROP:
             self.setCursor(Qt.CrossCursor)
             self.setMouseTracking(False)
@@ -67,16 +86,14 @@ class ImageView(QGraphicsView):
         elif mode == ToolMode.NONE:
             self.setCursor(Qt.ArrowCursor)
             self._clear_selection()
-            default_msg = "Ready"
+            default_msg = None
 
         else:
             self.setCursor(Qt.ArrowCursor)
-            default_msg = ""
+            default_msg = None
 
         if message is None:
             msg = default_msg
-        elif message == "":
-            msg = None
         else:
             msg = message
 
@@ -114,6 +131,15 @@ class ImageView(QGraphicsView):
             event.accept()
             return
 
+        if self._tool_mode == ToolMode.LOUPE and event.button() == Qt.LeftButton:
+            self._loupe_size_index = (self._loupe_size_index + 1) % len(LOUPE_SIZES)
+            new_size = LOUPE_SIZES[self._loupe_size_index]
+            if hasattr(self.parent(), 'status_bar'):
+                self.parent().status_bar.showMessage(f"Loupe size: {new_size}×{new_size}")
+            self.mouseMoveEvent(event)  # uppdate loupe
+            event.accept()
+            return
+
         # Right click → Fit to Window (works everywhere)
         if event.button() == Qt.RightButton:
             self.set_tool_mode(ToolMode.NONE, "Fit to window")
@@ -123,10 +149,6 @@ class ImageView(QGraphicsView):
 
         if event.button() == Qt.LeftButton and self._tool_mode == ToolMode.CROP:
             click_pos = event.pos()
-            # Cancel any pending double-click detection for crop
-            if self._click_timer is not None:
-                self._click_timer.stop()
-                self._click_timer = None
             self._start_pos = self.mapToScene(click_pos)
             if not self._rubber_band:
                 pen = QPen(QColor(255, 0, 0), 8, Qt.DashLine)
@@ -148,55 +170,28 @@ class ImageView(QGraphicsView):
 
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton:
-            # Cancel pending single-click action
-            if self._click_timer is not None:
-                self._click_timer.stop()
-                self._click_timer = None
-
             # Double-click → Original Size
             self.reset_zoom()
             event.accept()
             return
         super().mouseDoubleClickEvent(event)
 
-    def _process_single_click(self, pos):
-        self._click_timer = None
-        current_pos = self.mapToScene(pos)
-
-        if (self.crop_area.is_active and
-                not self.crop_area.rect.contains(current_pos.toPoint())):
-            self._clear_selection()
-            return
-
-        self._start_pos = current_pos
-        if not self._rubber_band:
-            pen = QPen(QColor(255, 0, 0), 8, Qt.DashLine)
-            self._rubber_band = self.scene().addRect(
-                QRectF(self._start_pos.x(), self._start_pos.y(), 0, 0),
-                pen
-            )
-        self.crop_area.reset()
-
     def mouseMoveEvent(self, event):
         if self._tool_mode == ToolMode.WHITE_BALANCE and self.parent():
             # Get coordinates on scene
             scene_pos = self.mapToScene(event.pos())
             x, y = int(scene_pos.x()), int(scene_pos.y())
-
             image_model = self.parent().image_model
             if image_model and image_model.current_pixmap:
                 pixmap = image_model.current_pixmap
                 w, h = pixmap.width(), pixmap.height()
-
                 min_dim = min(w, h)
                 half = min(WB_MAX_HALF_SIZE, max(1, min_dim // WB_MIN_DIVISOR))
-
                 # Get rect coordinates (x, y)
                 left = max(0, x - half)
                 top = max(0, y - half)
                 right = min(w, x + half)
                 bottom = min(h, y + half)
-
                 if right > left and bottom > top:
                     fragment = pixmap.copy(left, top, right - left, bottom - top)
                     display_size = (right - left) * 6
@@ -213,13 +208,36 @@ class ImageView(QGraphicsView):
                     self.magnifier.hide()
             else:
                 self.magnifier.hide()
+        elif self._tool_mode == ToolMode.LOUPE and self.parent():
+            scene_pos = self.mapToScene(event.pos())
+            x, y = int(scene_pos.x()), int(scene_pos.y())
+            image_model = self.parent().image_model
+            if image_model and image_model.current_pixmap:
+                pixmap = image_model.current_pixmap
+                w, h = pixmap.width(), pixmap.height()
+                size = LOUPE_SIZES[self._loupe_size_index]
+                half = size // 2
+                left = max(0, x - half)
+                top = max(0, y - half)
+                right = min(w, x + half)
+                bottom = min(h, y + half)
+                if right > left and bottom > top:
+                    fragment = pixmap.copy(left, top, right - left, bottom - top)
+                    self.loupe.setFixedSize(fragment.width(), fragment.height())
+                    self.loupe.setPixmap(fragment)
+                    self.loupe.move(QCursor.pos() + QPoint(20, 20))
+                    self.loupe.show()
+                else:
+                    self.loupe.hide()
+            else:
+                self.loupe.hide()
         else:
             self.magnifier.hide()
+            self.loupe.hide()
 
         if self._panning and self._pan_start_pos is not None:
             delta = event.pos() - self._pan_start_pos
             self._pan_start_pos = event.pos()
-
             self.horizontalScrollBar().setValue(
                 self.horizontalScrollBar().value() - delta.x()
             )
@@ -381,7 +399,7 @@ class ImageView(QGraphicsView):
         if hasattr(self.parent(), 'view_state'):
             self.parent().view_state.auto_fit_enabled = False
 
-        self.set_tool_mode(ToolMode.NONE, "")
+        self.set_tool_mode(ToolMode.NONE)
         if not self.scene() or self.scene().itemsBoundingRect().isNull():
             return
 
@@ -398,7 +416,7 @@ class ImageView(QGraphicsView):
         if hasattr(self.parent(), 'view_state'):
             self.parent().view_state.auto_fit_enabled = False
 
-        self.set_tool_mode(ToolMode.NONE, "")
+        self.set_tool_mode(ToolMode.NONE)
         if not self.scene() or self.scene().itemsBoundingRect().isNull():
             return
         self.scale(factor, factor)

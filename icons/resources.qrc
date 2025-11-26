@@ -28,5 +28,6 @@
         <file>redo.svg</file>
         <file>undo.svg</file>
         <file>wb.svg</file>
+        <file>loupe.svg</file>
     </qresource>
 </RCC>
