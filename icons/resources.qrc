@@ -29,5 +29,6 @@
         <file>undo.svg</file>
         <file>wb.svg</file>
         <file>loupe.svg</file>
+        <file>thumbnails.svg</file>
     </qresource>
 </RCC>

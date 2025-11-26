@@ -2,7 +2,7 @@ import os, sys, subprocess
 
 from PySide6.QtWidgets import (
     QMainWindow, QGraphicsScene, QStatusBar, QFileDialog,
-    QLabel, QMessageBox
+    QLabel, QMessageBox, QDialog
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QKeySequence, QIcon
@@ -10,6 +10,7 @@ from PySide6.QtGui import QAction, QKeySequence, QIcon
 from models import ImageModel, NavigatorModel, ViewState, ClipboardModel
 from image_helpers import ExifHelper, ResizeHelper, SaveHelper, move_to_trash
 from image_view import ImageView, ToolMode
+from thumbnail_dialog import ThumbnailDialog
 import resources_rc
 
 
@@ -49,9 +50,13 @@ class MainWindow(QMainWindow):
     def _create_actions(self):
         """Define all user-triggered actions."""
         # File actions
-        self.open_action = QAction(QIcon(":/icons/folder-open.svg"), "Open", self)
+        self.open_action = QAction(QIcon(":/icons/folder-open.svg"), "Open file", self)
         self.open_action.setShortcut(QKeySequence.Open)
         self.open_action.triggered.connect(self.open_image)
+
+        self.thumbnails_action = QAction(QIcon(":/icons/thumbnails.svg"), "Thumbnails/Open folder", self)
+        self.thumbnails_action.setShortcut("Ctrl+T")
+        self.thumbnails_action.triggered.connect(self.show_thumbnails)
 
         self.save_action = QAction(QIcon(":/icons/save.svg"), "Save", self)
         self.save_action.setShortcut(QKeySequence.Save)
@@ -155,6 +160,7 @@ class MainWindow(QMainWindow):
         file_menu = menu_bar.addMenu("File")
         file_menu.addAction(self.new_window_action)
         file_menu.addAction(self.open_action)
+        file_menu.addAction(self.thumbnails_action)
         file_menu.addAction(self.reload_action)
         file_menu.addAction(self.save_action)
         file_menu.addAction(self.delete_action)
@@ -191,6 +197,7 @@ class MainWindow(QMainWindow):
         toolbar = self.addToolBar("Tools")
         # File group
         toolbar.addAction(self.open_action)
+        toolbar.addAction(self.thumbnails_action)
         toolbar.addAction(self.new_window_action)
         toolbar.addAction(self.save_action)
         toolbar.addAction(self.reload_action)
@@ -279,6 +286,26 @@ class MainWindow(QMainWindow):
         """Launch a new instance of the application."""
         subprocess.Popen([sys.executable, sys.argv[0]])
         self.view.setFocus()
+
+    def show_thumbnails(self):
+        initial_dir = self.navigator_model.current_directory
+        if not initial_dir:
+            initial_dir = QFileDialog.getExistingDirectory(
+                self, "Select Folder with Images", os.path.expanduser("~")
+            )
+            if not initial_dir:
+                return
+        dialog = ThumbnailDialog(initial_dir, self)
+        if dialog.exec() == QDialog.Accepted and dialog.selected_path:
+            self.open_specific_image(dialog.selected_path)
+
+    def open_specific_image(self, path: str):
+        if self.image_model.load_from_path(path):
+            self.navigator_model.set_current_path(path)
+            self.display_image()
+            self._update_status_info()
+            formatted = self.navigator_model.format_path_for_display(path)
+            self.status_bar.showMessage(f"Opened: {formatted}")
 
     def _navigate_image(self, direction):
         """Navigate to next/previous image."""
