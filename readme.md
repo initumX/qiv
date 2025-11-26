@@ -8,7 +8,8 @@ A lightweight and fast image viewer and editor built with PySide6, designed for 
 
 - **View photo/screenshots**: JPG/JPEG, WebP, PNG
 - **Basic editing**: Rotate, flip, crop, copy/paste, resize 
-- **White balance and exposition**: experimental features
+- **White balance tool**: adjusting white balance by grey area of pic
+- **Loupe tool**: shows area under cursor on its original size (256x256px by default)
 - **Quality-controlled saving**: Save JPEGs with adjustable quality (default: 95), no unintended compression
 - **Navigation**: Zoom in/out, fit to window, display at original size, and pan with arrow keys or middle mouse button
 - **File browsing**: Navigate forward/backward through images in the same folder
