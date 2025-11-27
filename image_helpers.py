@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QInputDialog, QMessageBox, QDialog, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QPushButton
-from PySide6.QtGui import QImage
+from PySide6.QtGui import QImage, QPixmap
 from PIL import Image as PILImage
 import exifread
 
@@ -17,6 +17,55 @@ def move_to_trash(path: str) -> bool:
         print(f"Failed to move {path} to trash: {e}")
         return False
 
+class WhiteBalanceHelper:
+    @staticmethod
+    def apply_white_balance(pixmap: QPixmap, x: int, y: int, max_half_size: int = 11, min_divisor: int = 200) -> QPixmap | None:
+        """
+        Applies white balance to a QPixmap based on a neutral point (x, y).
+        Returns a new QPixmap with corrected colors, or None on error.
+        """
+        if pixmap.isNull():
+            return None
+        qimage = pixmap.toImage()
+        w, h = qimage.width(), qimage.height()
+        if not (0 <= x < w and 0 <= y < h):
+            return None
+
+        half = min(max_half_size, max(1, min(w, h) // min_divisor))
+        total_r = total_g = total_b = count = 0
+        for dy in range(-half, half + 1):
+            for dx in range(-half, half + 1):
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < w and 0 <= ny < h:
+                    pixel = qimage.pixel(nx, ny)
+                    r = (pixel >> 16) & 0xFF
+                    g = (pixel >> 8) & 0xFF
+                    b = pixel & 0xFF
+                    total_r += r
+                    total_g += g
+                    total_b += b
+                    count += 1
+
+        if count == 0 or total_g == 0:
+            return pixmap  # no change
+
+        gain_r = min(4.0, max(0.25, total_g / total_r)) if total_r else 1.0
+        gain_b = min(4.0, max(0.25, total_g / total_b)) if total_b else 1.0
+
+        img = PILImage.fromqimage(qimage)
+        if img.mode in ("RGB", "RGBA"):
+            bands = img.split()
+            r_new = bands[0].point(lambda v: min(255, int(v * gain_r)))
+            b_new = bands[2].point(lambda v: min(255, int(v * gain_b)))
+            corrected = PILImage.merge(img.mode, (r_new, bands[1], b_new) + (bands[3:] if len(bands) > 3 else ()))
+        else:
+            img = img.convert("RGB")
+            r, g, b = img.split()
+            r = r.point(lambda v: min(255, int(v * gain_r)))
+            b = b.point(lambda v: min(255, int(v * gain_b)))
+            corrected = PILImage.merge("RGB", (r, g, b))
+
+        return QPixmap.fromImage(corrected.toqimage())
 
 class SaveHelper:
     @staticmethod

@@ -50,108 +50,105 @@ class MainWindow(QMainWindow):
     def _create_actions(self):
         """Define all user-triggered actions."""
         # File actions
-        self.open_action = QAction(QIcon(":/icons/folder-open.svg"), "Open file", self)
-        self.open_action.setShortcut(QKeySequence.Open)
-        self.open_action.triggered.connect(self.open_image)
+        self.open_action = self._make_action("folder-open", "Open file",
+                                             QKeySequence.Open, self.open_image, False)
 
-        self.thumbnails_action = QAction(QIcon(":/icons/thumbnails.svg"), "Thumbnails/Open folder", self)
-        self.thumbnails_action.setShortcut("Ctrl+T")
-        self.thumbnails_action.triggered.connect(self.show_thumbnails)
+        self.thumbnails_action = self._make_action("thumbnails", "Thumbnails/Open folder",
+                                                   "Ctrl+T", self.show_thumbnails, False)
 
-        self.save_action = QAction(QIcon(":/icons/save.svg"), "Save", self)
-        self.save_action.setShortcut(QKeySequence.Save)
-        self.save_action.triggered.connect(lambda: self._safe_call(self.save_image))
+        self.save_action = self._make_action("save", "Save",
+                                             QKeySequence.Save, self.save_image, True)
 
-        self.reload_action = QAction(QIcon(":/icons/reload.svg"), "Reload", self)
-        self.reload_action.setShortcut("F5")
-        self.reload_action.triggered.connect(lambda: self._safe_call(self.reload_image))
+        self.reload_action = self._make_action("reload", "Reload",
+                                               "F5", self.reload_image, True)
 
-        self.new_window_action = QAction(QIcon(":/icons/new-file.svg"), "New Window", self)
-        self.new_window_action.setShortcut("Ctrl+N")
-        self.new_window_action.triggered.connect(self.new_window)
+        self.new_window_action = self._make_action("new-file", "New Window",
+                                                   "Ctrl+N", self.new_window, False)
 
-        self.delete_action = QAction(QIcon(":/icons/trash.svg"), "Move to Trash", self)
-        self.delete_action.setShortcut("Delete")
-        self.delete_action.triggered.connect(lambda: self._safe_call(self.delete_current_file))
+        self.delete_action = self._make_action("trash", "Move to Trash",
+                                               "Delete", self.delete_current_file, True)
 
+        # Edit actions
+        self.rotate_cw_action = self._make_action("cw", "Rotate CW",
+                                                  "R", self.rotate_cw, True)
+
+        self.rotate_ccw_action = self._make_action("ccw", "Rotate CCW",
+                                                   "L", self.rotate_ccw, True)
+
+        self.flip_h_action = self._make_action("flip-h", "Flip Horizontal",
+                                               "H", self.flip_horizontal, True)
+
+        self.flip_v_action = self._make_action("flip-v", "Flip Vertical",
+                                               "V", self.flip_vertical, True)
+
+        self.crop_action = self._make_action("crop", "Crop",
+                                            QKeySequence.Cut, self.crop_image, True)
+
+        self.copy_action = self._make_action("copy", "Copy",
+                                             QKeySequence.Copy, self.copy_image, True)
+
+        self.paste_action = self._make_action("paste", "Paste",
+                                               QKeySequence.Paste, self.paste_image, False)
+
+        self.resize_action = self._make_action("resize", "Resize",
+                                               "Ctrl+R", self.resize_image, True)
+
+        # Zoom actions
+        self.zoom_in_action = self._make_action("zoom-in", "Zoom In",
+                                                "+", self.view.zoom_in, True)
+
+        self.zoom_out_action = self._make_action("zoom-out", "Zoom Out",
+                                                 "-", self.view.zoom_out, True)
+
+        self.original_size_action = self._make_action("zoom-original", "Original Size",
+                                                      "=", self.view.reset_zoom, True)
+
+        self.fit_to_window_action = self._make_action("zoom-fit", "Fit To Window",
+                                                      "W", self.view.fit_to_view, True)
+
+        self.loupe_action = self._make_action("loupe", "Loupe (1:1 Preview)",
+                                              "Ctrl+L", self.toggle_loupe_mode, True, reset_tool=False)
+
+        # Navigation actions
+        self.next_action = self._make_action("arrow-right", "Next Image",
+                                             "N", self.next_image, False)
+
+        self.previous_action = self._make_action("arrow-left", "Previous Image",
+                                                 "Shift+N", self.previous_image, False)
+
+        # Info / tool actions
+        self.exif_action = self._make_action("info", "Show EXIF",
+                                             "I", self.show_exif, True, reset_tool=False)
+
+        self.wb_action = self._make_action("wb", "White Balance (Click Neutral)",
+                                           "Shift+I", self.toggle_wb_mode, True, reset_tool=False)
+
+        # Help
+        self.help_action = self._make_action("help", "About",
+                                             "F1", self.show_help, False)
+
+        # Exit
         self.exit_action = QAction("Exit", self)
         self.exit_action.setShortcut("Q")
         self.exit_action.triggered.connect(self.close)
 
-        # Edit actions
-        self.rotate_cw_action = QAction(QIcon(":/icons/cw.svg"), "Rotate CW", self)
-        self.rotate_cw_action.setShortcut("R")
-        self.rotate_cw_action.triggered.connect(lambda: self._safe_call(self.rotate_cw))
+    def _make_action(self, icon_name: str, text: str,
+                     shortcut, handler, needs_image=True, reset_tool=True):
+        action = QAction(QIcon(f":/icons/{icon_name}.svg"), text, self)
+        if shortcut:
+            action.setShortcut(shortcut)
 
-        self.rotate_ccw_action = QAction(QIcon(":/icons/ccw.svg"), "Rotate CCW", self)
-        self.rotate_ccw_action.setShortcut("L")
-        self.rotate_ccw_action.triggered.connect(lambda: self._safe_call(self.rotate_ccw))
+        def wrapped_handler():
+            if needs_image:
+                if not self.image_model.current_pixmap or self.image_model.current_pixmap.isNull():
+                    self.status_bar.showMessage("No image loaded")
+                    return
+                if reset_tool:
+                    self.view.set_tool_mode(ToolMode.NONE)
+            handler()
 
-        self.flip_h_action = QAction(QIcon(":/icons/flip-h.svg"), "Flip Horizontal", self)
-        self.flip_h_action.setShortcut("H")
-        self.flip_h_action.triggered.connect(lambda: self._safe_call(self.flip_horizontal))
-
-        self.flip_v_action = QAction(QIcon(":/icons/flip-v.svg"), "Flip Vertical", self)
-        self.flip_v_action.setShortcut("V")
-        self.flip_v_action.triggered.connect(lambda: self._safe_call(self.flip_vertical))
-
-        self.crop_action = QAction(QIcon(":/icons/crop.svg"), "Crop", self)
-        self.crop_action.setShortcut(QKeySequence.Cut)
-        self.crop_action.triggered.connect(lambda: self._safe_call(self.crop_image))
-
-        self.copy_action = QAction(QIcon(":/icons/copy.svg"), "Copy", self)
-        self.copy_action.setShortcut(QKeySequence.Copy)
-        self.copy_action.triggered.connect(lambda: self._safe_call(self.copy_image))
-
-        self.paste_action = QAction(QIcon(":/icons/paste.svg"), "Paste", self)
-        self.paste_action.setShortcut(QKeySequence.Paste)
-        self.paste_action.triggered.connect(self.paste_image)
-
-        self.resize_action = QAction(QIcon(":/icons/resize.svg"), "Resize", self)
-        self.resize_action.setShortcut("Ctrl+T")
-        self.resize_action.triggered.connect(lambda: self._safe_call(self.resize_image))
-
-        # Zoom actions
-        self.zoom_in_action = QAction(QIcon(":/icons/zoom-in.svg"), "Zoom In", self)
-        self.zoom_in_action.setShortcut("+")
-        self.zoom_in_action.triggered.connect(lambda: self._safe_call(self.view.zoom_in))
-
-        self.zoom_out_action = QAction(QIcon(":/icons/zoom-out.svg"), "Zoom Out", self)
-        self.zoom_out_action.setShortcut("-")
-        self.zoom_out_action.triggered.connect(lambda: self._safe_call(self.view.zoom_out))
-
-        self.original_size_action = QAction(QIcon(":/icons/zoom-original.svg"), "Original Size", self)
-        self.original_size_action.setShortcut("=")
-        self.original_size_action.triggered.connect(lambda: self._safe_call(self.view.reset_zoom))
-
-        self.fit_to_window_action = QAction(QIcon(":/icons/zoom-fit.svg"), "Fit To Window", self)
-        self.fit_to_window_action.setShortcut("W")
-        self.fit_to_window_action.triggered.connect(lambda: self._safe_call(self.view.fit_to_view))
-
-        self.loupe_action = QAction(QIcon(":/icons/loupe.svg"), "Loupe (1:1 Preview)", self)
-        self.loupe_action.setShortcut("Ctrl+L")
-        self.loupe_action.triggered.connect(lambda: self._safe_call(self.toggle_loupe_mode, reset_tool=False))
-
-        # Navigation actions
-        self.next_action = QAction(QIcon(":/icons/arrow-right.svg"), "Next Image", self)
-        self.next_action.setShortcut("N")
-        self.next_action.triggered.connect(self.next_image)
-
-        self.previous_action = QAction(QIcon(":/icons/arrow-left.svg"), "Previous Image", self)
-        self.previous_action.setShortcut("Shift+N")
-        self.previous_action.triggered.connect(self.previous_image)
-
-        # Info / tool actions
-        self.exif_action = QAction(QIcon(":/icons/info.svg"), "Show EXIF", self)
-        self.exif_action.triggered.connect(lambda: self._safe_call(self.show_exif, reset_tool=False))
-
-        self.wb_action = QAction(QIcon(":/icons/wb.svg"), "White Balance (Click Neutral)", self)
-        self.wb_action.triggered.connect(lambda: self._safe_call(self.toggle_wb_mode, reset_tool=False))
-
-        # Help
-        self.help_action = QAction(QIcon(":/icons/help.svg"), "About", self)
-        self.help_action.setShortcut("F1")
-        self.help_action.triggered.connect(self.show_help)
+        action.triggered.connect(wrapped_handler)
+        return action
 
     def _create_menus(self):
         """Build the menu bar."""
@@ -241,15 +238,6 @@ class MainWindow(QMainWindow):
         self.status_bar.addPermanentWidget(self.size_label)
         self.status_bar.addPermanentWidget(self.zoom_label)
 
-    def _safe_call(self, func, reset_tool=True, message="No image loaded"):
-        """Execute function only if an image is loaded."""
-        if not self.image_model.current_pixmap or self.image_model.current_pixmap.isNull():
-            self.status_bar.showMessage(message)
-            return
-        if reset_tool:
-            self.view.set_tool_mode(ToolMode.NONE)
-        func()
-
     def load_file_from_args(self):
         """Load image from command-line argument if provided."""
         if len(sys.argv) > 1:
@@ -311,6 +299,10 @@ class MainWindow(QMainWindow):
 
     def _navigate_image(self, direction):
         """Navigate to next/previous image."""
+        if not self.image_model.path:
+            self.status_bar.showMessage("Navigation requires an image loaded from file")
+            return
+        self.view.set_tool_mode(ToolMode.NONE)
         new_path = self.navigator_model.navigate(direction)
         if new_path and self.image_model.load_from_path(new_path):
             self.display_image()
@@ -321,34 +313,14 @@ class MainWindow(QMainWindow):
             self.status_bar.showMessage(f"No {direction} image")
 
     def next_image(self):
-        self.view.set_tool_mode(ToolMode.NONE)
         self._navigate_image("next")
 
     def previous_image(self):
-        self.view.set_tool_mode(ToolMode.NONE)
         self._navigate_image("previous")
 
     def _update_status_info(self):
-        """Update status bar with file index, filename, dimensions, and megapixels."""
-        if self.image_model.current_pixmap:
-            size_px = self.image_model.current_pixmap.size()
-            w, h = size_px.width(), size_px.height()
-            mp = w * h / 1_000_000
-            size_str = f"{w}×{h} ({mp:.1f} MP)"
-        else:
-            size_str = "??×?? (?.? MP)"
-
-        if self.navigator_model.total_count > 0:
-            idx = self.navigator_model.current_file_index + 1
-            total = self.navigator_model.total_count
-            name = self.navigator_model.current_filename
-            self.size_label.setText(f"{idx}/{total} — {name} {size_str}")
-        else:
-            if self.image_model.path:
-                name = os.path.basename(self.image_model.path)
-                self.size_label.setText(f"{name} {size_str}")
-            else:
-                self.size_label.setText(f"Pasted image {size_str}")
+        text = self.navigator_model.format_status_text(self.image_model.current_pixmap)
+        self.size_label.setText(text)
 
     def paste_image(self):
         """Load image from clipboard."""
@@ -461,7 +433,7 @@ class MainWindow(QMainWindow):
             saved_dir = os.path.dirname(path)
             if (self.navigator_model.current_directory and
                 os.path.samefile(saved_dir, self.navigator_model.current_directory)):
-                self.navigator_model.image_paths = self.navigator_model._get_image_paths_in_directory(saved_dir)
+                self.navigator_model.image_paths = self.navigator_model.get_image_paths_flat(saved_dir)
                 try:
                     self.navigator_model.current_file_index = self.navigator_model.image_paths.index(path)
                 except ValueError:
@@ -485,36 +457,42 @@ class MainWindow(QMainWindow):
             self.status_bar.showMessage(f"Resized to {w}×{h}")
 
     def delete_current_file(self):
-        if not self.image_model.path:
+        path = self.image_model.path
+        if not path:
             self.status_bar.showMessage("No file to delete")
             return
 
+        filename = os.path.basename(path)
         reply = QMessageBox.question(
             self, "Confirm Delete",
-            f"Move '{os.path.basename(self.image_model.path)}' to trash?",
+            f"Move '{filename}' to trash?",
             QMessageBox.Yes | QMessageBox.No, QMessageBox.No
         )
-        if reply == QMessageBox.Yes:
-            if move_to_trash(self.image_model.path):
-                self.status_bar.showMessage(f"Moved to trash: {os.path.basename(self.image_model.path)}")
-                if self.navigator_model.has_next():
-                    next_path = self.navigator_model.get_next_path()
-                    if self.image_model.load_from_path(next_path):
-                        self.navigator_model.set_current_path(next_path)
-                        self.display_image()
-                        self._update_status_info()
-                elif self.navigator_model.has_previous():
-                    prev_path = self.navigator_model.get_previous_path()
-                    if self.image_model.load_from_path(prev_path):
-                        self.navigator_model.set_current_path(prev_path)
-                        self.display_image()
-                        self._update_status_info()
-                else:
-                    self.image_model.path = None
-                    self.image_model.current_pixmap = None
-                    self.display_image()
-            else:
-                self.status_bar.showMessage("Failed to move file to trash")
+        if reply != QMessageBox.Yes:
+            return
+
+        if not move_to_trash(path):
+            self.status_bar.showMessage("Failed to move file to trash")
+            return
+
+        self.status_bar.showMessage(f"Moved to trash: {filename}")
+
+        # Try to load next image in sequence
+        next_path = None
+        if self.navigator_model.has_next():
+            next_path = self.navigator_model.get_next_path()
+        elif self.navigator_model.has_previous():
+            next_path = self.navigator_model.get_previous_path()
+
+        if next_path and self.image_model.load_from_path(next_path):
+            self.navigator_model.set_current_path(next_path)
+            self.display_image()
+            self._update_status_info()
+        else:
+            # No more images — clear
+            self.image_model.path = None
+            self.image_model.current_pixmap = None
+            self.display_image()
 
     def show_help(self):
         self.view.set_tool_mode(ToolMode.NONE)
