@@ -453,4 +453,3 @@ class ImageView(QGraphicsView):
     def clear_selection(self):
         """Public method to clear selection from outside."""
         self._clear_selection()
-
