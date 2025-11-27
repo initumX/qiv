@@ -60,35 +60,25 @@ class ImageModel:
         self.path = None
         return True
 
-    def rotate_90_clockwise(self):
+    def _apply_transform(self, transform: QTransform):
+        """Apply a QTransform and update internal state."""
         if not self.current_pixmap:
             return
-        transform = QTransform().rotate(90)
         self.current_pixmap = self.current_pixmap.transformed(transform, self._transform_mode())
         self.size = self.current_pixmap.size()
+
+    def rotate_90_clockwise(self):
+        self._apply_transform(QTransform().rotate(90))
 
     def rotate_90_counterclockwise(self):
-        if not self.current_pixmap:
-            return
-        transform = QTransform().rotate(-90)
-        self.current_pixmap = self.current_pixmap.transformed(transform, self._transform_mode())
-        self.size = self.current_pixmap.size()
+        self._apply_transform(QTransform().rotate(-90))
 
     def flip_horizontal(self):
-        """Flip current pixmap horizontally."""
-        if not self.current_pixmap:
-            return
-        transform = QTransform().scale(-1, 1)
-        self.current_pixmap = self.current_pixmap.transformed(transform, self._transform_mode())
-        self.size = self.current_pixmap.size()
+        self._apply_transform(QTransform().scale(-1, 1))
+
 
     def flip_vertical(self):
-        """Flip current pixmap vertically."""
-        if not self.current_pixmap:
-            return
-        transform = QTransform().scale(1, -1)
-        self.current_pixmap = self.current_pixmap.transformed(transform, self._transform_mode())
-        self.size = self.current_pixmap.size()
+        self._apply_transform(QTransform().scale(1, -1))
 
     def resize(self, width: int, height: int):
         """Resize current pixmap using PIL for better quality."""
