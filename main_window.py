@@ -130,7 +130,7 @@ class MainWindow(QMainWindow):
 
         self.loupe_action = QAction(QIcon(":/icons/loupe.svg"), "Loupe (1:1 Preview)", self)
         self.loupe_action.setShortcut("Ctrl+L")
-        self.loupe_action.triggered.connect(lambda: self._safe_call(self.toggle_loupe_mode))
+        self.loupe_action.triggered.connect(lambda: self._safe_call(self.toggle_loupe_mode, reset_tool=False))
 
         # Navigation actions
         self.next_action = QAction(QIcon(":/icons/arrow-right.svg"), "Next Image", self)
@@ -143,10 +143,10 @@ class MainWindow(QMainWindow):
 
         # Info / tool actions
         self.exif_action = QAction(QIcon(":/icons/info.svg"), "Show EXIF", self)
-        self.exif_action.triggered.connect(lambda: self._safe_call(self.show_exif))
+        self.exif_action.triggered.connect(lambda: self._safe_call(self.show_exif, reset_tool=False))
 
         self.wb_action = QAction(QIcon(":/icons/wb.svg"), "White Balance (Click Neutral)", self)
-        self.wb_action.triggered.connect(lambda: self._safe_call(self.toggle_wb_mode))
+        self.wb_action.triggered.connect(lambda: self._safe_call(self.toggle_wb_mode, reset_tool=False))
 
         # Help
         self.help_action = QAction(QIcon(":/icons/help.svg"), "About", self)
@@ -241,11 +241,13 @@ class MainWindow(QMainWindow):
         self.status_bar.addPermanentWidget(self.size_label)
         self.status_bar.addPermanentWidget(self.zoom_label)
 
-    def _safe_call(self, func, message="No image loaded"):
+    def _safe_call(self, func, reset_tool=True, message="No image loaded"):
         """Execute function only if an image is loaded."""
         if not self.image_model.current_pixmap or self.image_model.current_pixmap.isNull():
             self.status_bar.showMessage(message)
             return
+        if reset_tool:
+            self.view.set_tool_mode(ToolMode.NONE)
         func()
 
     def load_file_from_args(self):
@@ -361,22 +363,18 @@ class MainWindow(QMainWindow):
         self.view.set_pixmap(self.image_model.current_pixmap)
 
     def rotate_cw(self):
-        self.view.set_tool_mode(ToolMode.NONE)
         self.image_model.rotate_90_clockwise()
         self.display_image()
 
     def rotate_ccw(self):
-        self.view.set_tool_mode(ToolMode.NONE)
         self.image_model.rotate_90_counterclockwise()
         self.display_image()
 
     def flip_horizontal(self):
-        self.view.set_tool_mode(ToolMode.NONE)
         self.image_model.flip_horizontal()
         self.display_image()
 
     def flip_vertical(self):
-        self.view.set_tool_mode(ToolMode.NONE)
         self.image_model.flip_vertical()
         self.display_image()
 
@@ -391,9 +389,6 @@ class MainWindow(QMainWindow):
         self.display_image()
 
     def crop_image(self):
-        if not self.image_model.current_pixmap:
-            self.status_bar.showMessage("No image to crop")
-            return
         self.view.set_tool_mode(ToolMode.CROP)
 
     def finalize_crop(self):
@@ -409,8 +404,6 @@ class MainWindow(QMainWindow):
 
     def copy_image(self):
         """Copy full image or selection to clipboard."""
-        if not self.image_model.current_pixmap:
-            return
         if self.view.crop_area.is_active and not self.view.crop_area.rect.isNull():
             cropped = self.image_model.current_pixmap.copy(self.view.crop_area.rect)
             self.clipboard_model.copy_image(cropped)
@@ -430,8 +423,6 @@ class MainWindow(QMainWindow):
         self.view.setFocus()
 
     def save_image(self):
-        if not self.image_model.current_pixmap:
-            return
         initial_path = self.image_model.path or ""
         if initial_path:
             name, ext = os.path.splitext(initial_path)
@@ -482,9 +473,6 @@ class MainWindow(QMainWindow):
             self.status_bar.showMessage(f"Failed to save: {path}")
 
     def resize_image(self):
-        self.view.set_tool_mode(ToolMode.NONE)
-        if not self.image_model.current_pixmap:
-            return
         w, h = ResizeHelper.resize_with_aspect_ratio(
             self,
             self.image_model.current_pixmap,
@@ -497,7 +485,6 @@ class MainWindow(QMainWindow):
             self.status_bar.showMessage(f"Resized to {w}×{h}")
 
     def delete_current_file(self):
-        self.view.set_tool_mode(ToolMode.NONE)
         if not self.image_model.path:
             self.status_bar.showMessage("No file to delete")
             return
