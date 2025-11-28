@@ -16,7 +16,7 @@ A lightweight and fast image viewer and editor built with PySide6, designed for 
 - **EXIF metadata**: View image metadata in a dedicated panel
 - **Thumbnails/Open Folder**: Dialog window with thumbnails (uses caching and threads)
 
-## The most useful Hotkeys
+## Hotkeys
 
 - **Navigation**: arrows or mouse wheel scrolling
 - **Zooming in/out by mouse**: Ctrl+mouse wheel scrolling
@@ -26,6 +26,10 @@ A lightweight and fast image viewer and editor built with PySide6, designed for 
 - **Panning by mouse**: push down mouse wheel and move mouse
 - **Panning by keyboard**: Ctrl+arrows
 - **Cancel selected tool (crop/white balance/loupe)**: right click
+- **Rotate**: R and Shift+R
+- **Flip**: F and Shift+F 
+- **Loupe**: L
+- **White Balance**: B
 
 ## Development & Deployment
 

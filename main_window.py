@@ -73,13 +73,13 @@ class MainWindow(QMainWindow):
                                                   "R", self.rotate_cw, True)
 
         self.rotate_ccw_action = self._make_action("ccw", "Rotate CCW",
-                                                   "L", self.rotate_ccw, True)
+                                                   "Shift+R", self.rotate_ccw, True)
 
         self.flip_h_action = self._make_action("flip-h", "Flip Horizontal",
-                                               "H", self.flip_horizontal, True)
+                                               "F", self.flip_horizontal, True)
 
         self.flip_v_action = self._make_action("flip-v", "Flip Vertical",
-                                               "V", self.flip_vertical, True)
+                                               "Shift+F", self.flip_vertical, True)
 
         self.crop_action = self._make_action("crop", "Crop",
                                             QKeySequence.Cut, self.crop_image, True)
@@ -107,7 +107,7 @@ class MainWindow(QMainWindow):
                                                       "W", self.view.fit_to_view, True)
 
         self.loupe_action = self._make_action("loupe", "Loupe (1:1 Preview)",
-                                              "Ctrl+L", self.toggle_loupe_mode, True, reset_tool=False)
+                                              "L", self.toggle_loupe_mode, True, reset_tool=False)
 
         # Navigation actions
         self.next_action = self._make_action("arrow-right", "Next Image",
@@ -121,7 +121,7 @@ class MainWindow(QMainWindow):
                                              "I", self.show_exif, True, reset_tool=False)
 
         self.wb_action = self._make_action("wb", "White Balance (Click Neutral)",
-                                           "Shift+I", self.toggle_wb_mode, True, reset_tool=False)
+                                           "B", self.toggle_wb_mode, True, reset_tool=False)
 
         # Help
         self.help_action = self._make_action("help", "About",
@@ -160,6 +160,7 @@ class MainWindow(QMainWindow):
         file_menu.addAction(self.thumbnails_action)
         file_menu.addAction(self.reload_action)
         file_menu.addAction(self.save_action)
+        file_menu.addAction(self.exif_action)
         file_menu.addAction(self.delete_action)
         file_menu.addSeparator()
         file_menu.addAction(self.exit_action)
@@ -181,6 +182,8 @@ class MainWindow(QMainWindow):
         view_menu.addSeparator()
         view_menu.addAction(self.fit_to_window_action)
         view_menu.addAction(self.original_size_action)
+        view_menu.addSeparator()
+        view_menu.addAction(self.loupe_action)
 
         go_menu = menu_bar.addMenu("Go")
         go_menu.addAction(self.previous_action)
