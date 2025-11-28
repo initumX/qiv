@@ -25,6 +25,7 @@ class ImageModel:
         self.size = pixmap.size()
 
     def load_from_path(self, path: str) -> bool:
+        path = os.path.normpath(path)
         pixmap = QPixmap(path)
         if pixmap.isNull():
             print(f"Failed to load image: {path}")
@@ -117,7 +118,7 @@ class NavigatorModel:
             for filename in os.listdir(directory):
                 full_path = os.path.join(directory, filename)
                 if os.path.isfile(full_path) and self._is_image_file(full_path):
-                    paths.append(full_path)
+                    paths.append(os.path.normpath(full_path))
         except OSError:
             pass  # Directory inaccessible
         paths.sort(key=lambda p: os.path.basename(p).lower())
@@ -136,7 +137,7 @@ class NavigatorModel:
                 for filename in files:
                     full_path = os.path.join(root, filename)
                     if self._is_image_file(full_path):
-                        paths.append(full_path)
+                        paths.append(os.path.normpath(full_path))
         except OSError:
             pass
         paths.sort(key=lambda p: os.path.basename(p).lower())
@@ -152,6 +153,7 @@ class NavigatorModel:
     def set_current_path(self, path: str) -> bool:
         if not path:
             return False
+        path = os.path.normpath(path)
         directory = os.path.dirname(path)
         if directory != self.current_directory:
             self.current_directory = directory

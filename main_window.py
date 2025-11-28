@@ -241,7 +241,7 @@ class MainWindow(QMainWindow):
     def load_file_from_args(self):
         """Load image from command-line argument if provided."""
         if len(sys.argv) > 1:
-            file_path = sys.argv[1]
+            file_path = os.path.normpath(sys.argv[1])
             if os.path.isfile(file_path) and self.image_model.load_from_path(file_path):
                 self.navigator_model.set_current_path(file_path)
                 self.display_image()
@@ -256,6 +256,7 @@ class MainWindow(QMainWindow):
         dialog.setOption(QFileDialog.DontUseNativeDialog, True)
         if dialog.exec() == QFileDialog.Accepted:
             path = dialog.selectedFiles()[0]
+            path = os.path.normpath(path)
             if path and self.image_model.load_from_path(path):
                 self.navigator_model.set_current_path(path)
                 self.display_image()
@@ -290,6 +291,7 @@ class MainWindow(QMainWindow):
             self.open_specific_image(dialog.selected_path)
 
     def open_specific_image(self, path: str):
+        path = os.path.normpath(path)
         if self.image_model.load_from_path(path):
             self.navigator_model.set_current_path(path)
             self.display_image()
