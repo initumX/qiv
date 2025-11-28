@@ -140,10 +140,15 @@ class ImageView(QGraphicsView):
             event.accept()
             return
 
-        # Right click → Fit to Window (works everywhere)
         if event.button() == Qt.RightButton:
-            self.set_tool_mode(ToolMode.NONE, "Fit to window")
-            self.fit_to_view()
+            if self._tool_mode == ToolMode.NONE:
+                # Right-click in idle mode → fit to window
+                self.fit_to_view()
+                if hasattr(self.parent(), 'status_bar'):
+                    self.parent().status_bar.showMessage("Fit to window")
+            else:
+                # Right-click in tool mode → cancel tool (no zoom change)
+                self.set_tool_mode(ToolMode.NONE, "Tool cancelled")
             event.accept()
             return
 
@@ -281,16 +286,57 @@ class ImageView(QGraphicsView):
         super().mouseReleaseEvent(event)
 
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Escape:
-            # Global Esc
-            self.set_tool_mode(ToolMode.NONE, "Operation cancelled")
+        # --- Handle Ctrl+Arrow → Pan ---
+        if event.modifiers() & Qt.ControlModifier:
+            dx, dy = 0, 0
+            if event.key() == Qt.Key_Left:
+                dx = -30
+            elif event.key() == Qt.Key_Right:
+                dx = 30
+            elif event.key() == Qt.Key_Up:
+                dy = -30
+            elif event.key() == Qt.Key_Down:
+                dy = 30
+            else:
+                # Pass other Ctrl+keys to parent (e.g. Ctrl+N, Ctrl+T)
+                super().keyPressEvent(event)
+                return
+
+            # Scroll viewport
+            h_bar = self.horizontalScrollBar()
+            v_bar = self.verticalScrollBar()
+            if h_bar:
+                h_bar.setValue(h_bar.value() + dx)
+            if v_bar:
+                v_bar.setValue(v_bar.value() + dy)
+            event.accept()
             return
 
+        # --- Handle plain arrows → Navigate ---
+        if event.key() == Qt.Key_Left or event.key() == Qt.Key_Down:
+            if hasattr(self.parent(), 'previous_image'):
+                self.parent().previous_image()
+            event.accept()
+            return
+        elif event.key() == Qt.Key_Right or event.key() == Qt.Key_Up:
+            if hasattr(self.parent(), 'next_image'):
+                self.parent().next_image()
+            event.accept()
+            return
+
+        # --- Handle Esc (keep existing behavior) ---
+        if event.key() == Qt.Key_Escape:
+            self.set_tool_mode(ToolMode.NONE, "Operation cancelled")
+            event.accept()
+            return
+
+        # --- Handle Enter for crop (keep existing behavior) ---
         if self._tool_mode == ToolMode.CROP and event.key() in (Qt.Key_Enter, Qt.Key_Return):
             self._apply_crop()
             event.accept()
             return
 
+        # --- Pass everything else to parent (e.g. R, L, H, V, Delete, etc.) ---
         super().keyPressEvent(event)
 
     def _clear_selection(self):
@@ -373,10 +419,23 @@ class ImageView(QGraphicsView):
         self.update_zoom_display()
 
     def wheelEvent(self, event):
-        cursor_pos = event.position().toPoint()
-        factor = ZOOM_IN_FACTOR if event.angleDelta().y() > 0 else ZOOM_OUT_FACTOR
-        self._zoom_at_point(cursor_pos, factor)
-        event.accept()
+        if event.modifiers() & Qt.ControlModifier:
+            # Ctrl + Wheel → Zoom
+            cursor_pos = event.position().toPoint()
+            factor = ZOOM_IN_FACTOR if event.angleDelta().y() > 0 else ZOOM_OUT_FACTOR
+            self._zoom_at_point(cursor_pos, factor)
+            event.accept()
+        else:
+            # Plain Wheel → Navigate (next/prev)
+            if event.angleDelta().y() > 0:
+                # Scroll up → previous image
+                if hasattr(self.parent(), 'previous_image'):
+                    self.parent().previous_image()
+            else:
+                # Scroll down → next image
+                if hasattr(self.parent(), 'next_image'):
+                    self.parent().next_image()
+            event.accept()
 
     def zoom_in(self):
         cursor_pos = self.mapFromGlobal(QCursor.pos())

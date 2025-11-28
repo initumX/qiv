@@ -335,6 +335,7 @@ class MainWindow(QMainWindow):
         """Update scene with current pixmap."""
         self.scene.clear()
         self.view.set_pixmap(self.image_model.current_pixmap)
+        self.view.setFocus()
 
     def rotate_cw(self):
         self.image_model.rotate_90_clockwise()

@@ -14,6 +14,18 @@ A lightweight and fast image viewer and editor built with PySide6, designed for 
 - **Navigation**: Zoom in/out, fit to window, display at original size, and pan with arrow keys or middle mouse button
 - **File browsing**: Navigate forward/backward through images in the same folder
 - **EXIF metadata**: View image metadata in a dedicated panel
+- **Thumbnails/Open Folder**: Dialog window with thumbnails (uses caching and threads)
+
+## The most useful Hotkeys
+
+- **Navigation**: arrows or mouse wheel scrolling
+- **Zooming in/out by mouse**: Ctrl+mouse wheel scrolling
+- **Zooming in/out by keyboard**: + and -
+- **Original size**: double click or =
+- **Fit to window**: right click or w
+- **Panning by mouse**: push down mouse wheel and move mouse
+- **Panning by keyboard**: Ctrl+arrows
+- **Cancel selected tool (crop/white balance/loupe)**: right click
 
 ## Development & Deployment
 
