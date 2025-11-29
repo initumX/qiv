@@ -47,19 +47,21 @@ The latest version supports also  windows (tested on windows 10, but should also
 | Flip Horizontal / Vertical   | `F` / `Shift+F`               |
 
 ### File & Info
-| Action                        | Hotkey(s)                     |
-|------------------------------|-------------------------------|
-| Open file                    | `Ctrl+O`                      |
-| Open folder / thumbnails     | `Ctrl+T`                      |
-| Reload image                 | `F5`                          |
-| Move to trash                | `Delete`                      |
-| Show EXIF                    | `I`                           |
-| About / Help                 | `F1`                          |
+| Action                   | Hotkey(s) |
+|--------------------------|-----------|
+| Open file                | `Ctrl+O`  |
+| Open folder / thumbnails | `Ctrl+T`  |
+| Save image               | `Ctrl+S`  |
+| Reload image             | `F5`      |
+| Move to trash            | `Delete`  |
+| Show EXIF                | `I`       |
+| About / Help             | `F1`      |
 
 ### Cancel
-| Action                        | Hotkey(s)                     |
-|------------------------------|-------------------------------|
-| Exit any tool (crop, WB...)  | `Esc` or Right-click          |
+| Action                      | Hotkey(s)            |
+|-----------------------------|----------------------|
+| Exit any tool (crop, WB...) | `Esc` or Right-click |
+| Exit app                    | `Q`                  |
 
 ## Development & Deployment
 

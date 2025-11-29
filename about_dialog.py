@@ -85,6 +85,7 @@ class AboutDialog(QDialog):
         <table>
             <tr><td>Open file</td><td><code>Ctrl+O</code></td></tr>
             <tr><td>Open folder / thumbnails</td><td><code>Ctrl+T</code></td></tr>
+            <tr><td>Save image</td><td><code>Ctrl+S</code></td></tr>
             <tr><td>Reload image</td><td><code>F5</code></td></tr>
             <tr><td>Move to trash</td><td><code>Delete</code></td></tr>
             <tr><td>Show EXIF</td><td><code>I</code></td></tr>
