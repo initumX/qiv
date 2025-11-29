@@ -201,7 +201,12 @@ class ThumbnailDialog(QDialog):
             self.accept()
 
         def open_in_new_window():
-            subprocess.Popen([sys.executable, sys.argv[0], path])
+            if getattr(sys, 'frozen', False):
+                # Running as compiled executable
+                subprocess.Popen([sys.executable, path])
+            else:
+                # Running as script
+                subprocess.Popen([sys.executable, sys.argv[0], path])
 
         def reveal_in_file_manager():
             open_path_in_file_manager(path)
