@@ -71,4 +71,5 @@ Designed priorly for linux, but the latest version supports also windows
 
 - Built with **PySide6** (Qt6)
 - Targeted for Linux; deployed as AppImage
+- From version 0.0.5 works on Windows too
 
