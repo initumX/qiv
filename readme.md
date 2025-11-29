@@ -1,7 +1,7 @@
 # Qt Image Viewer
 
 Handy image viewer and editor built with PySide6. 
-The latest version supports also windows (tested on windows 10, but should also on windows 11)
+The latest version supports also  windows (tested on windows 10, but should also work on windows 11)
 
 ![Qt Image Viewer Screenshot (New version)](./screenshots/01.jpg)
 ![Qt Image Viewer Screenshot (New version)](./screenshots/02.jpg)
@@ -21,35 +21,45 @@ The latest version supports also windows (tested on windows 10, but should also 
 
 ## Hotkeys
 
-# Navigation/Zooming/Panning
-- **Navigation**: arrows or mouse wheel scrolling
-- **Zooming in/out by mouse**: Ctrl+mouse wheel scrolling
-- **Zooming in/out by keyboard**: + and -
-- **Original size**: double click or =
-- **Fit to window**: right click or w
-- **Panning by mouse**: push down mouse wheel and move mouse
-- **Panning by keyboard**: Ctrl+arrows
-- **Loupe**: L 
+### Navigation & View
+| Action                        | Hotkey(s)                     |
+|------------------------------|-------------------------------|
+| Next / Previous image        | ← → ↑ ↓ or Mouse wheel        |
+| Zoom In / Out                | `Ctrl + Wheel` or `+` / `-`   |
+| Original size                | `=` or Double-click           |
+| Fit to window                | `W` or Right-click            |
+| Pan (move image)             | `Ctrl + Arrows` or Middle drag|
 
-    # Transformations
-- **Rotate**: R and Shift+R
-- **Flip**: F and Shift+F 
+### Editing
+| Action                        | Hotkey(s)                     |
+|------------------------------|-------------------------------|
+| Enter Crop mode              | `Ctrl+X`                      |
+| Apply Crop                   | `Enter`                       |
+| Copy selection / full image  | `Ctrl+C`                      |
+| Paste image                  | `Ctrl+V`                      |
+| White Balance                | `B`                           |
+| Resize image                 | `Ctrl+R`                      |
 
-    # Editing
-- **Selection/Crop tool**: Ctrl+X (select area by this tool and then press Enter to Crop or Ctrl+C to copy)
-- **Copy/Paste**: Ctrl+C, Ctrl+V
-- **White Balance**: B
-- **Resize**: Ctrl+R
+### Transform
+| Action                        | Hotkey(s)                     |
+|------------------------------|-------------------------------|
+| Rotate 90° CW / CCW          | `R` / `Shift+R`               |
+| Flip Horizontal / Vertical   | `F` / `Shift+F`               |
 
-    # File operations
-- **Move to trash**: Delete
-- **Reload**: F5
-- **Open Folder/Show thumbnails**: Ctrl+T
-- **Open File**: Ctrl+O
+### File & Info
+| Action                        | Hotkey(s)                     |
+|------------------------------|-------------------------------|
+| Open file                    | `Ctrl+O`                      |
+| Open folder / thumbnails     | `Ctrl+T`                      |
+| Reload image                 | `F5`                          |
+| Move to trash                | `Delete`                      |
+| Show EXIF                    | `I`                           |
+| About / Help                 | `F1`                          |
 
-    # Other
-- **Cancel selected tool (crop/white balance/loupe)**: right click or Escape
-- **Show EXIF(if exist)**: I
+### Cancel
+| Action                        | Hotkey(s)                     |
+|------------------------------|-------------------------------|
+| Exit any tool (crop, WB...)  | `Esc` or Right-click          |
 
 ## Development & Deployment
 
