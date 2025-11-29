@@ -1,6 +1,7 @@
 # Qt Image Viewer
 
-A lightweight and fast image viewer and editor built with PySide6, designed for seamless integration into Linux desktop environments.
+Handy image viewer and editor built with PySide6. 
+The latest version supports also windows (tested on windows 10, but should also on windows 11)
 
 ![Qt Image Viewer Screenshot (New version)](./screenshots/01.jpg)
 ![Qt Image Viewer Screenshot (New version)](./screenshots/02.jpg)
@@ -20,6 +21,7 @@ A lightweight and fast image viewer and editor built with PySide6, designed for 
 
 ## Hotkeys
 
+    # Navigation/Zooming/Panning
 - **Navigation**: arrows or mouse wheel scrolling
 - **Zooming in/out by mouse**: Ctrl+mouse wheel scrolling
 - **Zooming in/out by keyboard**: + and -
@@ -27,11 +29,25 @@ A lightweight and fast image viewer and editor built with PySide6, designed for 
 - **Fit to window**: right click or w
 - **Panning by mouse**: push down mouse wheel and move mouse
 - **Panning by keyboard**: Ctrl+arrows
-- **Cancel selected tool (crop/white balance/loupe)**: right click
+- **Loupe**: L 
+- 
+    # Transformations
 - **Rotate**: R and Shift+R
 - **Flip**: F and Shift+F 
-- **Loupe**: L
+
+    # Editing
+- **Selection/Crop tool**: Ctrl+X (select area by this tool and then press Enter to Crop or Ctrl+C to copy)
+- **Copy/Paste**: Ctrl+C, Ctrl+V
 - **White Balance**: B
+
+    # File operations
+- **Move to trash**: Delete
+- **Reload**: F5
+- **Open Folder/Show thumbnails**: Ctrl+T
+- **Open File**: Ctrl+O
+
+
+- **Cancel selected tool (crop/white balance/loupe)**: right click or Escape
 
 ## Development & Deployment
 
