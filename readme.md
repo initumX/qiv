@@ -21,7 +21,7 @@ The latest version supports also windows (tested on windows 10, but should also 
 
 ## Hotkeys
 
-    # Navigation/Zooming/Panning
+# Navigation/Zooming/Panning
 - **Navigation**: arrows or mouse wheel scrolling
 - **Zooming in/out by mouse**: Ctrl+mouse wheel scrolling
 - **Zooming in/out by keyboard**: + and -
@@ -30,7 +30,7 @@ The latest version supports also windows (tested on windows 10, but should also 
 - **Panning by mouse**: push down mouse wheel and move mouse
 - **Panning by keyboard**: Ctrl+arrows
 - **Loupe**: L 
-- 
+
     # Transformations
 - **Rotate**: R and Shift+R
 - **Flip**: F and Shift+F 
@@ -39,6 +39,7 @@ The latest version supports also windows (tested on windows 10, but should also 
 - **Selection/Crop tool**: Ctrl+X (select area by this tool and then press Enter to Crop or Ctrl+C to copy)
 - **Copy/Paste**: Ctrl+C, Ctrl+V
 - **White Balance**: B
+- **Resize**: Ctrl+R
 
     # File operations
 - **Move to trash**: Delete
@@ -46,8 +47,9 @@ The latest version supports also windows (tested on windows 10, but should also 
 - **Open Folder/Show thumbnails**: Ctrl+T
 - **Open File**: Ctrl+O
 
-
+    # Other
 - **Cancel selected tool (crop/white balance/loupe)**: right click or Escape
+- **Show EXIF(if exist)**: I
 
 ## Development & Deployment
 
