@@ -36,18 +36,21 @@ class AboutDialog(QDialog):
         <p>Handy image viewer built with PySide6.</p>
 
         <h4>Features:</h4>
-        <ul>
-            <li>View photo/screenshots: JPG/JPEG, WebP, PNG</li>
-            <li>Basic editing: Rotate, flip, crop, copy/paste, resize</li>
-            <li>White balance feature</li>
-            <li>Saving with quality control</li>
-            <li>Zoom in/out, fit to window, original size</li>
-            <li>Handy panning with arrows or middle mouse button</li>
-            <li>File navigation (next/previous in folder)</li>
-            <li>EXIF data display</li>
-            <li>Thumbnails/Open Folder: Dialog window with thumbnails (uses caching and threads)</li>
-            <li>...</li>
-        </ul>
+        <style>
+            table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+            td { padding: 4px 8px; border: 1px solid #ccc; vertical-align: top; }
+            td:first-child { font-weight: bold; width: 40%; }
+        </style>
+        <table>
+            <tr><td>Supported formats</td><td>JPG/JPEG, WebP, PNG</td></tr>
+            <tr><td>Basic editing</td><td>Rotate, flip, crop, copy/paste, resize</td></tr>
+            <tr><td>White balance</td><td>Adjust by clicking neutral gray area</td></tr>
+            <tr><td>Quality-controlled saving</td><td>Adjustable JPEG/WebP quality (default: 95)</td></tr>
+            <tr><td>View(Zoom&Panning)</td><td>Zoom in/out, fit to window, original size, panning</td></tr>
+            <tr><td>File navigation</td><td>Next/previous image in folder</td></tr>
+            <tr><td>EXIF metadata</td><td>Shows image metadata(if exist)</td></tr>
+            <tr><td>Thumbnails</td><td>Can create and show thumbnails</td></tr>
+        </table>
         
         <h4>Hotkeys:</h4>
         <style>

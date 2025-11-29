@@ -6,17 +6,17 @@ Designed priorly for linux, but the latest version supports also windows
 
 ## Features
 
-| Feature                  | Description                                              |
-|--------------------------|----------------------------------------------------------|
-| **View formats**         | JPG/JPEG, WebP, PNG                                      |
-| **Basic editing**        | Rotate, flip, crop, copy/paste, resize                   |
-| **White balance**        | Adjust by clicking neutral gray area                     |
-| **Loupe tool**           | 1:1 preview under cursor (256×256 px default)            |
-| **Quality-controlled saving** | JPEG/WebP with adjustable quality (default: 95)          |
-| **Zoom**                 | Zoom, fit-to-window, original size, panning              |
-| **File browsing**        | Navigate next/prev image in folder                       |
-| **EXIF metadata**        | View in dedicated panel                                  |
-| **Thumbnails**           | Open folder → scrollable grid (with caching & threading) |
+| Feature                  | Description                                     |
+|--------------------------|-------------------------------------------------|
+| **View formats**         | JPG/JPEG, WebP, PNG                             |
+| **Basic editing**        | Rotate, flip, crop, copy/paste, resize          |
+| **White balance**        | Adjust by clicking neutral gray area            |
+| **Loupe tool**           | 1:1 preview under cursor (256×256 px default)   |
+| **Quality-controlled saving** | JPEG/WebP with adjustable quality (default: 95) |
+| **Zoom**                 | Zoom, fit-to-window, original size, panning     |
+| **File browsing**        | Navigate next/prev image in folder              |
+| **EXIF metadata**        | Shows EXIF metadata (if exist)                  |
+| **Thumbnails**           | Can create and show thumbnails                  |
 
 ## Hotkeys
 
