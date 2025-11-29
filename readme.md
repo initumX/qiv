@@ -7,32 +7,19 @@ Designed priorly for linux, but the latest version supports also windows
 ![Qt Image Viewer Main Window](./screenshots/01.png)
 ![Qt Image Viewer Thumbnail Dialog](./screenshots/02.png)
 
-
 ## Features
 
-- **View photo/screenshots**: JPG/JPEG, WebP, PNG
-- **Basic editing**: Rotate, flip, crop, copy/paste, resize 
-- **White balance tool**: adjusting white balance by grey area of pic
-- **Loupe tool**: shows area under cursor on its original size (256x256px by default)
-- **Quality-controlled saving**: Save JPEGs with adjustable quality (default: 95), no unintended compression
-- **Navigation**: Zoom in/out, fit to window, display at original size, and pan with arrow keys or middle mouse button
-- **File browsing**: Navigate forward/backward through images in the same folder
-- **EXIF metadata**: View image metadata in a dedicated panel
-- **Thumbnails/Open Folder**: Dialog window with thumbnails (uses caching and threads)
-
-## Features
-
-| Feature                | Description                                              |
-|------------------------|----------------------------------------------------------|
-| **View formats**       | JPG/JPEG, WebP, PNG                                      |
-| **Basic editing**      | Rotate, flip, crop, copy/paste, resize                   |
-| **White balance**      | Adjust by clicking neutral gray area                     |
-| **Loupe tool**         | 1:1 preview under cursor (256×256 px default)            |
+| Feature                  | Description                                              |
+|--------------------------|----------------------------------------------------------|
+| **View formats**         | JPG/JPEG, WebP, PNG                                      |
+| **Basic editing**        | Rotate, flip, crop, copy/paste, resize                   |
+| **White balance**        | Adjust by clicking neutral gray area                     |
+| **Loupe tool**           | 1:1 preview under cursor (256×256 px default)            |
 | **Quality-controlled saving** | JPEG/WebP with adjustable quality (default: 95)          |
-| **Navigation**         | Zoom, fit-to-window, original size, panning              |
-| **File browsing**      | Navigate next/prev image in folder                       |
-| **EXIF metadata**      | View in dedicated panel                                  |
-| **Thumbnails**         | Open folder → scrollable grid (with caching & threading) |
+| **Zoom**                 | Zoom, fit-to-window, original size, panning              |
+| **File browsing**        | Navigate next/prev image in folder                       |
+| **EXIF metadata**        | View in dedicated panel                                  |
+| **Thumbnails**           | Open folder → scrollable grid (with caching & threading) |
 
 ## Hotkeys
 
