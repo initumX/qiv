@@ -45,11 +45,29 @@ class AboutDialog(QDialog):
             <li>Handy panning with arrows or middle mouse button</li>
             <li>File navigation (next/previous in folder)</li>
             <li>EXIF data display</li>
+            <li>Thumbnails/Open Folder: Dialog window with thumbnails (uses caching and threads)</li>
             <li>...</li>
         </ul>
         
+        <h4>Hotkeys:</h4>
+        <ul> 
+            <li>Navigation: arrows or mouse wheel scrolling </li>
+            <li>Zooming in/out by mouse: Ctrl+mouse wheel scrolling</li>
+            <li>Zooming in/out by keyboard: + and - </li>
+            <li>Original size: double click or = </li>
+            <li>Fit to window: right click or w </li>
+            <li>Panning by mouse: push down mouse wheel and move mouse </li>
+            <li>Panning by keyboard: Ctrl+arrows </li>
+            <li>Cancel selected tool (crop/white balance/loupe): right click </li>
+            <li>Rotate: R and Shift+R </li>
+            <li>Flip: F and Shift+F  </li>
+            <li>Loupe: L </li>
+            <li>White Balance: B </li>
+            <li>Resize: Ctrl+R </li>
+        </ul>
+        
         <h4>Version:</h4>
-        <p>0.0.4</p>
+        <p>0.0.5</p>
 
         <h4>Author:</h4>
         <p>initum.x</p>
