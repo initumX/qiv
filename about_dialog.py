@@ -33,7 +33,7 @@ class AboutDialog(QDialog):
     def get_about_text(self):
         return """
         <h3>About Qt Image Viewer</h3>
-        <p>A lightweight and fast image viewer and editor built with PySide6.</p>
+        <p>Handy image viewer built with PySide6.</p>
 
         <h4>Features:</h4>
         <ul>
@@ -50,21 +50,52 @@ class AboutDialog(QDialog):
         </ul>
         
         <h4>Hotkeys:</h4>
-        <ul> 
-            <li>Navigation: arrows or mouse wheel scrolling </li>
-            <li>Zooming in/out by mouse: Ctrl+mouse wheel scrolling</li>
-            <li>Zooming in/out by keyboard: + and - </li>
-            <li>Original size: double click or = </li>
-            <li>Fit to window: right click or w </li>
-            <li>Panning by mouse: push down mouse wheel and move mouse </li>
-            <li>Panning by keyboard: Ctrl+arrows </li>
-            <li>Cancel selected tool (crop/white balance/loupe): right click </li>
-            <li>Rotate: R and Shift+R </li>
-            <li>Flip: F and Shift+F  </li>
-            <li>Loupe: L </li>
-            <li>White Balance: B </li>
-            <li>Resize: Ctrl+R </li>
-        </ul>
+        <style>
+            table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+            th, td { text-align: left; padding: 6px 8px; border: 1px solid #ccc; }
+            th { background-color: #f5f5f5; }
+        </style>
+
+        <h5>Navigation & View</h5>
+        <table>
+            <tr><td>Next / Previous image</td><td>← → ↑ ↓ or Mouse wheel</td></tr>
+            <tr><td>Zoom In / Out</td><td><code>Ctrl + Wheel</code> or <code>+</code> / <code>-</code></td></tr>
+            <tr><td>Original size</td><td><code>=</code> or Double-click</td></tr>
+            <tr><td>Fit to window</td><td><code>W</code> or Right-click</td></tr>
+            <tr><td>Pan (move image)</td><td><code>Ctrl + Arrows</code> or Middle drag</td></tr>
+        </table>
+
+        <h5>Editing</h5>
+        <table>
+            <tr><td>Enter Crop mode</td><td><code>Ctrl+X</code></td></tr>
+            <tr><td>Apply Crop</td><td><code>Enter</code></td></tr>
+            <tr><td>Copy selection / full image</td><td><code>Ctrl+C</code></td></tr>
+            <tr><td>Paste image</td><td><code>Ctrl+V</code></td></tr>
+            <tr><td>White Balance</td><td><code>B</code></td></tr>
+            <tr><td>Resize image</td><td><code>Ctrl+R</code></td></tr>
+        </table>
+
+        <h5>Transform</h5>
+        <table>
+            <tr><td>Rotate 9 0° CW / CCW</td><td><code>R</code> / <code>Shift+R</code></td></tr>
+            <tr><td>Flip Horizontal / Vertical</td><td><code>F</code> / <code>Shift+F</code></td></tr>
+        </table>
+
+        <h5>File & Info</h5>
+        <table>
+            <tr><td>Open file</td><td><code>Ctrl+O</code></td></tr>
+            <tr><td>Open folder / thumbnails</td><td><code>Ctrl+T</code></td></tr>
+            <tr><td>Reload image</td><td><code>F5</code></td></tr>
+            <tr><td>Move to trash</td><td><code>Delete</code></td></tr>
+            <tr><td>Show EXIF</td><td><code>I</code></td></tr>
+            <tr><td>About / Help</td><td><code>F1</code></td></tr>
+        </table>
+
+        <h5>Cancel</h5>
+        <table>
+            <tr><td>Exit any tool (crop, WB...)</td><td><code>Esc</code> or Right-click</td></tr>
+            <tr><td>Exit from app</td><td><code>Q</code></td></tr>
+        </table>
         
         <h4>Version:</h4>
         <p>0.0.5</p>
