@@ -31,14 +31,14 @@ The latest version supports also  windows (tested on windows 10, but should also
 | Pan (move image)             | `Ctrl + Arrows` or Middle drag|
 
 ### Editing
-| Action                        | Hotkey(s)                     |
-|------------------------------|-------------------------------|
-| Enter Crop mode              | `Ctrl+X`                      |
-| Apply Crop                   | `Enter`                       |
-| Copy selection / full image  | `Ctrl+C`                      |
-| Paste image                  | `Ctrl+V`                      |
-| White Balance                | `B`                           |
-| Resize image                 | `Ctrl+R`                      |
+| Action                      | Hotkey(s)                     |
+|-----------------------------|-------------------------------|
+| Enter Crop/Selection mode   | `Ctrl+X`                      |
+| Apply Crop                  | `Enter`                       |
+| Copy selection / full image | `Ctrl+C`                      |
+| Paste image                 | `Ctrl+V`                      |
+| White Balance               | `B`                           |
+| Resize image                | `Ctrl+R`                      |
 
 ### Transform
 | Action                        | Hotkey(s)                     |
