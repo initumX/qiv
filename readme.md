@@ -3,9 +3,9 @@
 Handy image viewer and editor built with PySide6. 
 The latest version supports also  windows (tested on windows 10, but should also work on windows 11)
 
-![Qt Image Viewer Screenshot (New version)](./screenshots/01.jpg)
-![Qt Image Viewer Screenshot (New version)](./screenshots/02.jpg)
-![Qt Image Viewer Screenshot (New version)](./screenshots/03.jpg)
+![Qt Image Viewer Main Window](./screenshots/01.png)
+![Qt Image Viewer Thumbnail Dialog](./screenshots/02.png)
+
 
 ## Features
 
