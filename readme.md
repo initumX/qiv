@@ -4,9 +4,6 @@ Handy image viewer built with PySide6.
 Designed priorly for linux, but the latest version supports also windows 
 (tested on windows 10, but should also work on windows 11).
 
-![Qt Image Viewer Main Window](./screenshots/01.png)
-![Qt Image Viewer Thumbnail Dialog](./screenshots/02.png)
-
 ## Features
 
 | Feature                  | Description                                              |
@@ -64,6 +61,11 @@ Designed priorly for linux, but the latest version supports also windows
 |-----------------------------|----------------------|
 | Exit any tool (crop, WB...) | `Esc` or Right-click |
 | Exit app                    | `Q`                  |
+
+
+## Screenshots
+![Qt Image Viewer Main Window](./screenshots/01.png)
+![Qt Image Viewer Thumbnail Dialog](./screenshots/02.png)
 
 ## Development & Deployment
 
