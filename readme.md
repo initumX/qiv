@@ -2,7 +2,9 @@
 
 A lightweight and fast image viewer and editor built with PySide6, designed for seamless integration into Linux desktop environments.
 
-![Qt Image Viewer Screenshot (New version)](screenshot004.png)
+![Qt Image Viewer Screenshot (New version)](./screenshots/01.jpg)
+![Qt Image Viewer Screenshot (New version)](./screenshots/02.jpg)
+![Qt Image Viewer Screenshot (New version)](./screenshots/03.jpg)
 
 ## Features
 
