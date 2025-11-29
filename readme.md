@@ -1,7 +1,8 @@
 # Qt Image Viewer
 
-Handy image viewer and editor built with PySide6. 
-The latest version supports also  windows (tested on windows 10, but should also work on windows 11)
+Handy image viewer built with PySide6. 
+Designed priorly for linux, but the latest version supports also windows 
+(tested on windows 10, but should also work on windows 11).
 
 ![Qt Image Viewer Main Window](./screenshots/01.png)
 ![Qt Image Viewer Thumbnail Dialog](./screenshots/02.png)
@@ -18,6 +19,20 @@ The latest version supports also  windows (tested on windows 10, but should also
 - **File browsing**: Navigate forward/backward through images in the same folder
 - **EXIF metadata**: View image metadata in a dedicated panel
 - **Thumbnails/Open Folder**: Dialog window with thumbnails (uses caching and threads)
+
+## Features
+
+| Feature                | Description                                              |
+|------------------------|----------------------------------------------------------|
+| **View formats**       | JPG/JPEG, WebP, PNG                                      |
+| **Basic editing**      | Rotate, flip, crop, copy/paste, resize                   |
+| **White balance**      | Adjust by clicking neutral gray area                     |
+| **Loupe tool**         | 1:1 preview under cursor (256×256 px default)            |
+| **Quality-controlled saving** | JPEG/WebP with adjustable quality (default: 95)          |
+| **Navigation**         | Zoom, fit-to-window, original size, panning              |
+| **File browsing**      | Navigate next/prev image in folder                       |
+| **EXIF metadata**      | View in dedicated panel                                  |
+| **Thumbnails**         | Open folder → scrollable grid (with caching & threading) |
 
 ## Hotkeys
 
