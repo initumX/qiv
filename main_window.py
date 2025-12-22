@@ -375,7 +375,7 @@ class MainWindow(QMainWindow):
         rect = self.view.crop_area.rect
         cropped = self.image_model.current_pixmap.copy(rect)
         self.image_model.apply_to_current(cropped)
-        self.status_bar.showMessage("Cropped image copied to clipboard")
+        self.status_bar.showMessage("Image cropped")
         self.view.crop_area.reset()
         self.display_image()
 
