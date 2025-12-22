@@ -85,7 +85,7 @@ class MainWindow(QMainWindow):
                                             QKeySequence.Cut, self.crop_image, True)
 
         self.copy_action = self._make_action("copy", "Copy",
-                                             QKeySequence.Copy, self.copy_image, True)
+                                             QKeySequence.Copy, self.copy_image, True, reset_tool=False)
 
         self.paste_action = self._make_action("paste", "Paste",
                                                QKeySequence.Paste, self.paste_image, False)
@@ -385,6 +385,7 @@ class MainWindow(QMainWindow):
             cropped = self.image_model.current_pixmap.copy(self.view.crop_area.rect)
             self.clipboard_model.copy_image(cropped)
             self.status_bar.showMessage("Selected area copied to clipboard")
+            self.view._clear_selection()
         else:
             self.clipboard_model.copy_image(self.image_model.current_pixmap)
             self.status_bar.showMessage("Full image copied to clipboard")
