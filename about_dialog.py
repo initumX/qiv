@@ -80,7 +80,7 @@ class AboutDialog(QDialog):
 
         <h5>Transform</h5>
         <table>
-            <tr><td>Rotate 9 0° CW / CCW</td><td><code>R</code> / <code>Shift+R</code></td></tr>
+            <tr><td>Rotate 90° CW / CCW</td><td><code>R</code> / <code>Shift+R</code></td></tr>
             <tr><td>Flip Horizontal / Vertical</td><td><code>F</code> / <code>Shift+F</code></td></tr>
         </table>
 
@@ -102,7 +102,7 @@ class AboutDialog(QDialog):
         </table>
         
         <h4>Version:</h4>
-        <p>0.0.5</p>
+        <p>0.0.6</p>
 
         <h4>Author:</h4>
         <p>initum.x</p>
