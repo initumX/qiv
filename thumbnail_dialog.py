@@ -1,8 +1,6 @@
 """
-thumbnail_dialog.py
 Displays a scrollable grid of image thumbnails from a selected directory.
 """
-
 import sys
 import subprocess
 import os
@@ -14,7 +12,6 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt, QObject, Signal, QRunnable, QThreadPool
-
 # Modular utilities
 from thumbnail_cache import load_or_create_thumbnail
 from models import NavigatorModel
@@ -24,7 +21,6 @@ from open_in_fm import open_path_in_file_manager
 
 class ThumbnailWorker(QRunnable):
     """Runs file scanning and thumbnail generation in background."""
-
     class Signals(QObject):
         progress = Signal(str)
         thumbnail_ready = Signal(str, QPixmap)
@@ -72,16 +68,13 @@ class ThumbnailDialog(QDialog):
         self.selected_path: Optional[str] = None
         self.current_directory = directory
         self.image_paths = []
-        self._thumbnail_widgets = []
+        self._path_to_widget = {}
         self._worker: Optional[ThumbnailWorker] = None
-
         self._progress_label = QLabel("Scanning files...")
         self._progress_label.setAlignment(Qt.AlignCenter)
-
         self._scroll_area = QScrollArea()
         self._scroll_area.setWidgetResizable(True)
         self._scroll_area.hide()
-
         self._build_ui()
         self._start_scanning(use_subfolders=False)
 
@@ -91,7 +84,6 @@ class ThumbnailDialog(QDialog):
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(self._progress_label)
         main_layout.addWidget(self._scroll_area)
-
         btn_layout = QHBoxLayout()
         open_folder_btn = QPushButton("Open Folder…")
         open_folder_btn.clicked.connect(self._open_another_folder)
@@ -99,19 +91,14 @@ class ThumbnailDialog(QDialog):
         scan_sub_btn.clicked.connect(self._scan_subfolders)
         cancel_btn = QPushButton("Cancel")
         cancel_btn.clicked.connect(self.reject)
-
         btn_layout.addWidget(open_folder_btn)
         btn_layout.addWidget(scan_sub_btn)
         btn_layout.addStretch()
         btn_layout.addWidget(cancel_btn)
         main_layout.addLayout(btn_layout)
 
-    def _create_thumbnail_widget(self, path: str) -> QWidget:
-        """Create a reusable thumbnail widget (image + filename) for the given file path."""
-        thumb = load_or_create_thumbnail(path)
-        if not thumb:
-            return None
-
+    def _create_thumbnail_widget(self, path: str, thumb: QPixmap) -> QWidget:
+        """Create a widget for the given path using a pre-loaded thumbnail."""
         label = QLabel()
         label.setPixmap(thumb)
         label.setAlignment(Qt.AlignCenter)
@@ -119,10 +106,7 @@ class ThumbnailDialog(QDialog):
         label.setFrameShape(QFrame.Box)
         label.setToolTip(path)
 
-        # Double-click → accept and close dialog
         label.mouseDoubleClickEvent = lambda e, p=path: self._select_and_accept(p)
-
-        # Context menu
         label.setContextMenuPolicy(Qt.CustomContextMenu)
         label.customContextMenuRequested.connect(
             lambda pos, p=path, lbl=label: self._show_context_menu(p, lbl, pos)
@@ -141,18 +125,19 @@ class ThumbnailDialog(QDialog):
         return widget
 
     def _add_thumbnail(self, path: str, pixmap: QPixmap):
-        self.image_paths.append(path)
-        widget = self._create_thumbnail_widget(path)
+        if path in self._path_to_widget:
+            return
+        widget = self._create_thumbnail_widget(path, pixmap)
         if not widget:
             return
-        self._thumbnail_widgets.append(widget)
-        grid = self._get_grid_layout()
-        col = len(self.image_paths) - 1
-        row = col // self._columns()
-        grid.addWidget(widget, row, col % self._columns())
+        self.image_paths.append(path)
+        self._path_to_widget[path] = widget
 
-    def _rebuild_grid(self):
-        self._clear_grid()
+    def _update_grid(self):
+        old_content = self._scroll_area.takeWidget()
+        if old_content:
+            old_content.deleteLater()
+
         if not self.image_paths:
             return
 
@@ -162,36 +147,17 @@ class ThumbnailDialog(QDialog):
         grid.setContentsMargins(10, 10, 10, 10)
 
         for i, path in enumerate(self.image_paths):
-            widget = self._create_thumbnail_widget(path)
-            if not widget:
+            widget = self._path_to_widget.get(path)
+            if widget is None:
                 continue
-            self._thumbnail_widgets.append(widget)
             row = i // self._columns()
             col = i % self._columns()
             grid.addWidget(widget, row, col)
 
         self._scroll_area.setWidget(content)
 
-    def _get_grid_layout(self):
-        content = self._scroll_area.widget()
-        if not content:
-            content = QWidget()
-            grid = QGridLayout(content)
-            grid.setSpacing(10)
-            grid.setContentsMargins(10, 10, 10, 10)
-            self._scroll_area.setWidget(content)
-        else:
-            grid = content.layout()
-        return grid
-
     def _columns(self):
         return max(1, self.width() // 280)
-
-    def _clear_grid(self):
-        content = self._scroll_area.widget()
-        if content:
-            content.deleteLater()
-        self._thumbnail_widgets.clear()
 
     def _show_context_menu(self, path: str, label_widget, point):
         menu = QMenu(self)
@@ -202,10 +168,8 @@ class ThumbnailDialog(QDialog):
 
         def open_in_new_window():
             if getattr(sys, 'frozen', False):
-                # Running as compiled executable
                 subprocess.Popen([sys.executable, path])
             else:
-                # Running as script
                 subprocess.Popen([sys.executable, sys.argv[0], path])
 
         def reveal_in_file_manager():
@@ -215,7 +179,8 @@ class ThumbnailDialog(QDialog):
             if move_to_trash(path):
                 if path in self.image_paths:
                     self.image_paths.remove(path)
-                self._rebuild_grid()
+                self._path_to_widget.pop(path, None)
+                self._update_grid()
                 QMessageBox.information(self, "Deleted", f"Moved to trash:\n{os.path.basename(path)}")
             else:
                 QMessageBox.warning(self, "Error", "Failed to move file to trash.")
@@ -230,11 +195,12 @@ class ThumbnailDialog(QDialog):
         if self._worker:
             self._worker.cancel()
         self.image_paths.clear()
-        self._thumbnail_widgets.clear()
-        self._clear_grid()
+        self._path_to_widget.clear()
+        old_content = self._scroll_area.takeWidget()
+        if old_content:
+            old_content.deleteLater()
         self._progress_label.show()
         self._scroll_area.hide()
-
         self._worker = ThumbnailWorker(self.current_directory, use_subfolders)
         self._worker.signals.progress.connect(self._on_progress)
         self._worker.signals.thumbnail_ready.connect(self._add_thumbnail)
@@ -249,6 +215,7 @@ class ThumbnailDialog(QDialog):
         self._progress_label.hide()
         if self.image_paths:
             self._scroll_area.show()
+            self._update_grid()
         else:
             self._progress_label.setText("No images found.")
             self._progress_label.show()
@@ -280,4 +247,4 @@ class ThumbnailDialog(QDialog):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        # Optional: implement dynamic reflow if needed
+        self._update_grid()
