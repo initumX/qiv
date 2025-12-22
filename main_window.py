@@ -380,12 +380,12 @@ class MainWindow(QMainWindow):
         self.display_image()
 
     def copy_image(self):
-        """Copy full image or selection to clipboard."""
+        """Copy full image or selection to clipboard, then clear selection if used."""
         if self.view.crop_area.is_active and not self.view.crop_area.rect.isNull():
             cropped = self.image_model.current_pixmap.copy(self.view.crop_area.rect)
             self.clipboard_model.copy_image(cropped)
             self.status_bar.showMessage("Selected area copied to clipboard")
-            self.view._clear_selection()
+            self.view.clear_selection()
         else:
             self.clipboard_model.copy_image(self.image_model.current_pixmap)
             self.status_bar.showMessage("Full image copied to clipboard")
