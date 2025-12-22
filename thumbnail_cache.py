@@ -12,9 +12,7 @@ from pathlib import Path
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt
 
-
 SUPPORTED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
-
 
 def get_thumbnail_cache_dir() -> Path:
     """
@@ -26,7 +24,6 @@ def get_thumbnail_cache_dir() -> Path:
         cache_home = os.path.expanduser("~/.cache")
     return Path(cache_home) / "qiv" / "thumbnails"
 
-
 def get_cache_path(file_path: str) -> Path:
     """
     Generate a unique cache file path based on the original file path and its modification time.
@@ -35,8 +32,7 @@ def get_cache_path(file_path: str) -> Path:
     stat = os.stat(file_path)
     key = f"{file_path}_{stat.st_mtime}"
     hash_key = hashlib.md5(key.encode()).hexdigest()
-    return get_thumbnail_cache_dir() / f"{hash_key}.png"
-
+    return get_thumbnail_cache_dir() / f"{hash_key}.jpg"
 
 def load_or_create_thumbnail(path: str) -> QPixmap | None:
     """
@@ -46,7 +42,6 @@ def load_or_create_thumbnail(path: str) -> QPixmap | None:
     cache_path = get_cache_path(path)
     if cache_path.exists():
         return QPixmap(str(cache_path))
-
     pixmap = QPixmap(path)
     if pixmap.isNull():
         return None
@@ -57,7 +52,6 @@ def load_or_create_thumbnail(path: str) -> QPixmap | None:
     # Ensure cache directory exists
     cache_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Save to cache
-    thumb.save(str(cache_path))
-
+    # Save to cache as JPEG (80% quality)
+    thumb.save(str(cache_path), "JPEG", 80)
     return thumb
